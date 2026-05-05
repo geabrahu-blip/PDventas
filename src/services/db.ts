@@ -15,95 +15,11 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Purchase, Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem } from '../types';
+import { Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem } from '../types';
 
 // Helper to get a random ID when not provided
 const generateId = () => doc(collection(db, 'dummy')).id;
 
-// Purchases
-export const getPurchases = async (): Promise<Purchase[]> => {
-  const q = query(collection(db, 'purchases'));
-  const querySnapshot = await getDocs(q);
-  const purchases = querySnapshot.docs.map(doc => doc.data() as Purchase);
-  return purchases.sort((a, b) => b.createdAt - a.createdAt);
-};
-
-export const getPurchaseById = async (id: string): Promise<Purchase | null> => {
-  const docRef = doc(db, 'purchases', id);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? (docSnap.data() as Purchase) : null;
-};
-
-export const addPurchase = async (purchase: Omit<Purchase, 'id' | 'createdAt'>): Promise<Purchase> => {
-  const id = generateId();
-  const newPurchase: Purchase = {
-    ...purchase,
-    id,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, 'purchases', id), newPurchase);
-  return newPurchase;
-};
-
-export const deletePurchase = async (id: string): Promise<void> => {
-  // 1. Get all products associated with this purchase
-  const products = await getProductsByPurchaseId(id);
-
-  // 2. Reverse inventory operations
-  for (const product of products) {
-    let invItem;
-
-    if (product.barcode) {
-      const qBarcode = query(collection(db, 'inventory'), where('barcode', '==', product.barcode), where('storeId', '==', 'bodega'));
-      const snap = await getDocs(qBarcode);
-      if (!snap.empty) {
-        invItem = { ...snap.docs[0].data(), id: snap.docs[0].id } as InventoryItem;
-      }
-    }
-
-    if (!invItem) {
-      const qName = query(collection(db, 'inventory'), where('name', '==', product.name), where('storeId', '==', 'bodega'));
-      const nameSnap = await getDocs(qName);
-      const potentialMatches = nameSnap.docs.map(d => ({...d.data(), id: d.id} as InventoryItem));
-
-      invItem = potentialMatches.find(item =>
-        item.name.toLowerCase().trim() === product.name.toLowerCase().trim() &&
-        (item.brand || '') === (product.brand || '') &&
-        (item.category || '') === (product.category || '')
-      );
-    }
-
-    if (invItem) {
-      const newUnits = Math.max(0, invItem.units - product.units);
-      if (newUnits === 0) {
-        // Option 1: Delete the inventory item if units hit 0
-        await deleteDoc(doc(db, 'inventory', invItem.id));
-        await syncToPublicCatalog(invItem, true);
-      } else {
-        // Option 2: Update with reduced units
-        const updatedInv = {
-          ...invItem,
-          units: newUnits
-        };
-        await setDoc(doc(db, 'inventory', invItem.id), updatedInv);
-        await syncToPublicCatalog(updatedInv);
-      }
-    }
-
-    // 3. Delete the product itself
-    await deleteDoc(doc(db, 'products', product.id));
-  }
-
-  // 4. Finally, delete the purchase
-  await deleteDoc(doc(db, 'purchases', id));
-};
-
-// Products
-export const getProductsByPurchaseId = async (purchaseId: string): Promise<Product[]> => {
-  const q = query(collection(db, 'products'), where('purchaseId', '==', purchaseId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => doc.data() as Product);
-};
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
   const id = generateId();
@@ -152,10 +68,8 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
       sellingPrice: newProduct.sellingPrice,
       gender: newProduct.gender || existingInv.gender,
       capacity: newProduct.capacity || existingInv.capacity,
-      perfumeType: newProduct.perfumeType || existingInv.perfumeType,
+      categoryType: newProduct.categoryType || existingInv.categoryType,
       image: newProduct.image || existingInv.image, // update image if new one provided
-      decant5mlPrice: newProduct.decant5mlPrice || existingInv.decant5mlPrice,
-      decant5mlImage: newProduct.decant5mlImage || existingInv.decant5mlImage
     };
     const sanitizedUpdatedInv = JSON.parse(JSON.stringify(updatedInv));
     await setDoc(doc(db, 'inventory', existingInv.id), sanitizedUpdatedInv);
@@ -177,8 +91,6 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
       priceBs: newProduct.priceBs,
       wholesalePrice: newProduct.wholesalePrice,
       sellingPrice: newProduct.sellingPrice,
-      decant5mlPrice: newProduct.decant5mlPrice,
-      decant5mlImage: newProduct.decant5mlImage
     };
     const sanitizedInvItem = JSON.parse(JSON.stringify(invItem));
     await setDoc(doc(db, 'inventory', invId), sanitizedInvItem);
@@ -233,11 +145,9 @@ export const updateProduct = async (updatedProduct: Product, updatePricesAllStor
       category: updatedProduct.category,
       gender: updatedProduct.gender,
       capacity: updatedProduct.capacity,
-      perfumeType: updatedProduct.perfumeType,
+      categoryType: updatedProduct.categoryType,
       image: updatedProduct.image || inv.image,
       barcode: updatedProduct.barcode || inv.barcode,
-      decant5mlPrice: updatedProduct.decant5mlPrice,
-      decant5mlImage: updatedProduct.decant5mlImage,
     };
 
     if (inv.storeId === 'bodega') {
@@ -294,11 +204,9 @@ export const syncToPublicCatalog = async (item: InventoryItem, isDelete: boolean
       category: item.category,
       gender: item.gender,
       capacity: item.capacity,
-      perfumeType: item.perfumeType,
+      categoryType: item.categoryType,
       image: item.image,
       sellingPrice: item.sellingPrice,
-      decant5mlPrice: item.decant5mlPrice,
-      decant5mlImage: item.decant5mlImage
     };
 
     // Safely strip any undefined properties to prevent Firebase "invalid-argument" crashes on older records
@@ -433,7 +341,7 @@ export const getUserByUsername = async (username: string): Promise<User | null> 
 // Database Reset
 export const clearAllData = async (): Promise<void> => {
   // Warning: This clears almost all collections, but should ONLY be used in development or testing.
-  const collectionsToClear = ['purchases', 'products', 'inventory', 'sales', 'transfers'];
+  const collectionsToClear = ['products', 'inventory', 'sales', 'transfers'];
 
   for (const collectionName of collectionsToClear) {
     const q = query(collection(db, collectionName));

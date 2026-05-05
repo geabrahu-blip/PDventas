@@ -6,12 +6,12 @@ import { getAuth } from "firebase/auth";
 // Fallback to hardcoded values to prevent white screen in deployments
 // without environment variables configured. Firebase config for the web is safe to be public.
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB-Z-iOLagPr_lQMq87eQ_doqOLIfssxGs",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "inventario-perfumes.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "inventario-perfumes",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "inventario-perfumes.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "712235668233",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:712235668233:web:a616ad967df32199ff79d8"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAfyVb2Ib9llKot1iAckcOLfedv5nCJcmY",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "pieldivina-8e167.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "pieldivina-8e167",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "pieldivina-8e167.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "414757799407",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:414757799407:web:59c41b8504469176ea221a"
 };
 
 // Initialize Firebase

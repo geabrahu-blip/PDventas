@@ -505,7 +505,7 @@ const Inventory = () => {
                         <div className="font-medium text-gray-900">{product.name}</div>
                         <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap mt-1">
                           {product.brand && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.brand}</span>}
-                          {product.perfumeType && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.perfumeType}</span>}
+                          {product.categoryType && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.categoryType}</span>}
                           {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 font-medium">{product.capacity}</span>}
                           {product.gender && <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">{product.gender}</span>}
                         </div>

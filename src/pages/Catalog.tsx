@@ -209,7 +209,7 @@ const Catalog = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="Buscar perfumes..."
+                  placeholder="Buscar cosméticos..."
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onFocus={loadAllProducts}
@@ -338,9 +338,9 @@ const Catalog = () => {
                             {displayCapacity}
                           </span>
                         )}
-                        {product.perfumeType && (
+                        {product.categoryType && (
                           <span className="bg-gray-50 border border-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-semibold">
-                            {product.perfumeType}
+                            {product.categoryType}
                           </span>
                         )}
                       </div>

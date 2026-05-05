@@ -212,9 +212,9 @@ const StoreInventory = () => {
                     </div>
                     <h3 className="font-medium text-sm line-clamp-2 flex-1">{product.name}</h3>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {product.perfumeType && (
+                      {product.categoryType && (
                         <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-sm">
-                          {product.perfumeType}
+                          {product.categoryType}
                         </span>
                       )}
                       {product.capacity && (

@@ -23,11 +23,9 @@ export interface Product {
   category?: string;
   gender?: string; // e.g. 'Mujer' | 'Varón' | 'Unisex'
   capacity?: string; // e.g., '100 ml', '50 g'
-  perfumeType?: string; // e.g., 'Eau De Parfum', 'Splash'
+  categoryType?: string; // e.g., 'Skincare', 'Makeup'
   barcode?: string;
 
-  decant5mlPrice?: number;
-  decant5mlImage?: string;
 }
 
 export interface InventoryItem {
@@ -42,15 +40,13 @@ export interface InventoryItem {
   category?: string;
   gender?: string;
   capacity?: string;
-  perfumeType?: string;
+  categoryType?: string;
   barcode?: string;
   image: string;
   priceBs: number;
   wholesalePrice: number;
   sellingPrice: number;
 
-  decant5mlPrice?: number;
-  decant5mlImage?: string;
 }
 
 export interface PublicCatalogItem {
@@ -63,13 +59,11 @@ export interface PublicCatalogItem {
   category?: string;
   gender?: string;
   capacity?: string;
-  perfumeType?: string;
+  categoryType?: string;
   image: string;
   sellingPrice: number;
   // NO priceBs or wholesalePrice
 
-  decant5mlPrice?: number;
-  decant5mlImage?: string;
 }
 
 export interface Purchase {

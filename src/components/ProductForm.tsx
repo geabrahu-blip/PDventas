@@ -21,7 +21,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [wholesalePrice, setWholesalePrice] = useState<number | ''>('');
   const [sellingPrice, setSellingPrice] = useState<number | ''>('');
   const [capacity, setCapacity] = useState('');
-  const [perfumeType, setPerfumeType] = useState('');
+  const [categoryType, setCategoryType] = useState('');
   const [barcode, setBarcode] = useState('');
   const [updatePricesAllStores, setUpdatePricesAllStores] = useState(false);
 
@@ -59,7 +59,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCategory(p.category || '');
     setGender(p.gender || '');
     setCapacity(p.capacity || '');
-    setPerfumeType(p.perfumeType || '');
+    setCategoryType(p.categoryType || '');
     setBarcode(p.barcode || '');
     setImage(p.image || '');
     setPriceBs(p.priceBs || '');
@@ -81,7 +81,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setCategory(editingProduct.category || '');
       setGender(editingProduct.gender || '');
       setCapacity(editingProduct.capacity || '');
-      setPerfumeType(editingProduct.perfumeType || '');
+      setCategoryType(editingProduct.categoryType || '');
       setBarcode(editingProduct.barcode || '');
       setPriceBs(editingProduct.priceBs);
       setUnits(editingProduct.units);
@@ -100,7 +100,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCategory('');
     setGender('');
     setCapacity('');
-    setPerfumeType('');
+    setCategoryType('');
     setBarcode('');
     setPriceBs('');
     setUnits('');
@@ -150,7 +150,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       category,
       gender,
       capacity,
-      perfumeType,
+      categoryType,
       barcode,
       image,
       priceBs: Number(priceBs),
@@ -322,16 +322,16 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         </div>
 
         <div className="col-span-1">
-          <label htmlFor="prod-perfume-type" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Perfume (Opcional)</label>
+          <label htmlFor="prod-category-type" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Categoría (Opcional)</label>
           <select
-            id="prod-perfume-type"
-            value={perfumeType}
-            onChange={(e) => setPerfumeType(e.target.value)}
+            id="prod-category-type"
+            value={categoryType}
+            onChange={(e) => setCategoryType(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
           >
             <option value="">Seleccionar...</option>
-            <option value="Eau De Toilette">Eau De Toilette</option>
-            <option value="Eau De Parfum">Eau De Parfum</option>
+            <option value="Labial">Labial</option>
+            <option value="Base">Base</option>
             <option value="Eau De Cologne">Eau De Cologne</option>
             <option value="Extrait de Parfum">Extrait de Parfum</option>
             <option value="Parfum">Parfum</option>
@@ -340,7 +340,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             <option value="Body Spray">Body Spray</option>
             <option value="Fragrance Lotion">Fragrance Lotion</option>
             <option value="Shimmer Fragrance Lotion">Shimmer Fragrance Lotion</option>
-            <option value="Splash">Splash</option>
+            <option value="Rubor">Rubor</option>
             <option value="Aftershave">Aftershave</option>
             <option value="Roll-on">Roll-on</option>
             <option value="Set / Estuche">Set / Estuche</option>
