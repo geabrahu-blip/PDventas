@@ -22,7 +22,8 @@ function App() {
             <Route path="/stores" element={<Stores />} />
             <Route path="/pos" element={<StoreInventory />} />
             <Route path="/reports" element={<SalesReport />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<Navigate to="/inventory" replace />} />
+              <Route path="*" element={<Navigate to="/inventory" replace />} />
             </Route>
           </Routes>
         </BrowserRouter>
