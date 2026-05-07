@@ -178,7 +178,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           {editingProduct ? (
             <>
-              <Save className="h-5 w-5 text-blue-600" />
+              <Save className="h-5 w-5 text-teal-600" />
               Editar Producto
             </>
           ) : (
@@ -202,7 +202,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
                   setShowProductSearch(true);
                 }}
                 onFocus={() => setShowProductSearch(true)}
-                className="w-full pl-9 pr-3 py-1.5 text-sm border border-indigo-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-indigo-50/30"
+                className="w-full pl-9 pr-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-teal-50/30"
               />
             </div>
 
@@ -214,7 +214,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
                       <li
                         key={p.id}
                         onClick={() => handleSelectExistingProduct(p)}
-                        className="px-4 py-2 hover:bg-indigo-50 cursor-pointer flex items-center gap-3 border-b border-gray-50 last:border-0"
+                        className="px-4 py-2 hover:bg-teal-50 cursor-pointer flex items-center gap-3 border-b border-gray-50 last:border-0"
                       >
                         {p.image ? (
                           <img src={p.image} className="w-8 h-8 rounded object-cover" />
@@ -403,21 +403,21 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
         {/* Precios de Salida */}
         {editingProduct && (
-          <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2 mb-2 p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-start gap-3">
+          <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2 mb-2 p-3 bg-teal-50 rounded-lg border border-teal-100 flex items-start gap-3">
             <div className="flex items-center h-5">
               <input
                 id="update-prices-all-stores"
                 type="checkbox"
                 checked={updatePricesAllStores}
                 onChange={(e) => setUpdatePricesAllStores(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-teal-600 bg-white border-gray-300 rounded focus:ring-teal-500"
               />
             </div>
             <div className="text-sm">
-              <label htmlFor="update-prices-all-stores" className="font-medium text-blue-900 cursor-pointer">
+              <label htmlFor="update-prices-all-stores" className="font-medium text-teal-900 cursor-pointer">
                 Actualizar precios en todas las sucursales
               </label>
-              <p className="text-blue-700 mt-1">
+              <p className="text-teal-700 mt-1">
                 Si marcas esto, los nuevos precios de venta reemplazarán los precios en todas las tiendas donde haya stock de este producto.
                 Si lo dejas desmarcado, los precios solo se actualizarán en Bodega y se respetarán los precios personalizados de otras tiendas.
                 (Nota: Las etiquetas y fotos siempre se actualizarán en todas las tiendas).
@@ -471,7 +471,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           )}
           <button
             type="submit"
-            className={`px-6 py-2 rounded-lg font-medium transition-colors text-white ${editingProduct ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary-600 hover:bg-primary-700'}`}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors text-white ${editingProduct ? 'bg-teal-600 hover:bg-teal-700' : 'bg-primary-600 hover:bg-primary-700'}`}
           >
             {editingProduct ? 'Actualizar Producto' : 'Guardar Producto'}
           </button>

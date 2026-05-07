@@ -221,7 +221,7 @@ const Inventory = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
       </div>
     );
   }
@@ -251,7 +251,7 @@ const Inventory = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Truck className="w-6 h-6 text-indigo-600" />
+            <Truck className="w-6 h-6 text-teal-600" />
             Nuevo Envío Múltiple
           </h1>
           <button
@@ -273,7 +273,7 @@ const Inventory = () => {
                   placeholder="Buscar productos por código, nombre, marca..."
                   value={bulkSearchTerm}
                   onChange={(e) => setBulkSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
             </div>
@@ -299,7 +299,7 @@ const Inventory = () => {
                            {product.brand && <span className="bg-gray-100 px-1 py-0.5 rounded">{product.brand}</span>}
                            {product.capacity && <span className="bg-gray-100 px-1 py-0.5 rounded">{product.capacity}</span>}
                         </div>
-                        <div className="text-xs mt-1 text-blue-600 font-medium">Origen: {getStoreName(product.storeId)}</div>
+                        <div className="text-xs mt-1 text-teal-600 font-medium">Origen: {getStoreName(product.storeId)}</div>
                       </div>
                     </div>
                     <div className="mt-auto flex items-center justify-between">
@@ -307,7 +307,7 @@ const Inventory = () => {
                       <button
                         onClick={() => addToTransferCart(product)}
                         disabled={availableUnits <= 0}
-                        className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm font-medium"
+                        className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm font-medium"
                       >
                         <Plus className="w-4 h-4" /> Agregar
                       </button>
@@ -327,7 +327,7 @@ const Inventory = () => {
           <div className="w-full lg:w-1/3">
             <div className="bg-white rounded-lg shadow p-4 sticky top-4">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5 text-indigo-600" />
+                <Package className="w-5 h-5 text-teal-600" />
                 Carrito de Envío
               </h2>
 
@@ -336,7 +336,7 @@ const Inventory = () => {
                 <select
                   value={bulkTargetStoreId}
                   onChange={(e) => setBulkTargetStoreId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
                 >
                   <option value="" disabled>Seleccione destino...</option>
                   <option value="bodega">Bodega Central</option>
@@ -394,7 +394,7 @@ const Inventory = () => {
               <button
                 onClick={handleBulkTransferSubmit}
                 disabled={transferCart.length === 0 || !bulkTargetStoreId}
-                className="w-full py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Truck className="w-5 h-5" />
                 Confirmar Envío ({transferCart.reduce((sum, i) => sum + i.quantity, 0)} ítems)
@@ -410,7 +410,7 @@ const Inventory = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Package className="w-6 h-6 text-indigo-600" />
+          <Package className="w-6 h-6 text-teal-600" />
           Inventario Global y Transferencias
         </h1>
         <div className="flex flex-wrap gap-2 justify-end">
@@ -429,7 +429,7 @@ const Inventory = () => {
           )}
           <button
             onClick={() => setIsBulkTransferOpen(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center justify-center gap-2"
+            className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 flex items-center justify-center gap-2"
           >
             <Truck className="w-5 h-5" />
             Nuevo Envío Múltiple
@@ -472,7 +472,7 @@ const Inventory = () => {
             placeholder="Buscar por código, nombre, marca..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
       </div>
@@ -507,7 +507,7 @@ const Inventory = () => {
                           {product.brand && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.brand}</span>}
                           {product.categoryType && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.categoryType}</span>}
                           {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 font-medium">{product.capacity}</span>}
-                          {product.gender && <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">{product.gender}</span>}
+                          {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded">{product.gender}</span>}
                         </div>
                       </div>
                     </div>
@@ -515,7 +515,7 @@ const Inventory = () => {
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       (!product.storeId || product.storeId === 'bodega')
-                        ? 'bg-blue-100 text-blue-800'
+                        ? 'bg-teal-100 text-teal-800'
                         : 'bg-purple-100 text-purple-800'
                     }`}>
                       {getStoreName(product.storeId)}
@@ -532,7 +532,7 @@ const Inventory = () => {
                       <button
                         onClick={() => handleOpenTransfer(product)}
                         disabled={product.units === 0}
-                        className="inline-flex items-center p-1.5 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center p-1.5 bg-teal-50 text-teal-600 rounded-md hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title="Transferir stock"
                       >
                         <ArrowRightLeft className="w-4 h-4" />
@@ -542,7 +542,7 @@ const Inventory = () => {
                         <>
                           <button
                             onClick={() => handleOpenEdit(product)}
-                            className="inline-flex items-center p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
                             title="Editar Precios de Venta"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -576,8 +576,8 @@ const Inventory = () => {
       {isEditModalOpen && editItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
-              <h2 className="text-xl font-semibold text-blue-900 flex items-center gap-2">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-teal-50">
+              <h2 className="text-xl font-semibold text-teal-900 flex items-center gap-2">
                 <Edit2 className="w-5 h-5" />
                 Editar Precios de Venta
               </h2>
@@ -608,7 +608,7 @@ const Inventory = () => {
                     required
                     value={editWholesalePrice}
                     onChange={(e) => setEditWholesalePrice(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                   />
                 </div>
               </div>
@@ -624,7 +624,7 @@ const Inventory = () => {
                     required
                     value={editSellingPrice}
                     onChange={(e) => setEditSellingPrice(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                   />
                 </div>
               </div>
@@ -639,7 +639,7 @@ const Inventory = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700"
                 >
                   Guardar Precios
                 </button>
@@ -677,7 +677,7 @@ const Inventory = () => {
                   required
                   value={transferQuantity}
                   onChange={(e) => setTransferQuantity(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
 
@@ -687,7 +687,7 @@ const Inventory = () => {
                   required
                   value={targetStoreId}
                   onChange={(e) => setTargetStoreId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 >
                   <option value="" disabled>Selecciona un destino</option>
                   {(!selectedProduct.storeId || selectedProduct.storeId !== 'bodega') && (
@@ -712,7 +712,7 @@ const Inventory = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700"
                 >
                   Confirmar Transferencia
                 </button>

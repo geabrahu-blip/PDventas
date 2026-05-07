@@ -149,10 +149,10 @@ const StoreInventory = () => {
         <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
             <h1 className="text-xl font-bold flex items-center gap-2 w-full sm:w-auto">
-              <StoreIcon className="w-6 h-6 text-indigo-600" />
+              <StoreIcon className="w-6 h-6 text-teal-600" />
               Punto de Venta
               {isLoading && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 ml-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600 ml-2"></div>
               )}
             </h1>
           </div>
@@ -165,7 +165,7 @@ const StoreInventory = () => {
                 placeholder="Buscar por código o nombre..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm"
                 autoFocus
               />
             </div>
@@ -173,7 +173,7 @@ const StoreInventory = () => {
               value={selectedStoreId}
               onChange={(e) => setSelectedStoreId(e.target.value)}
               disabled={!isAdmin} // Lock for regular users
-              className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto disabled:bg-gray-100 disabled:text-gray-500"
+              className="border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 w-full sm:w-auto disabled:bg-gray-100 disabled:text-gray-500"
             >
               <option value="" disabled>Selecciona una sucursal</option>
               {stores.map(store => (
@@ -201,7 +201,7 @@ const StoreInventory = () => {
                   <div
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="border rounded-lg p-3 cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all flex flex-col h-full"
+                    className="border rounded-lg p-3 cursor-pointer hover:border-teal-500 hover:shadow-md transition-all flex flex-col h-full"
                   >
                     <div className="h-32 bg-gray-100 rounded-md mb-2 overflow-hidden flex items-center justify-center">
                       {product.image ? (
@@ -223,13 +223,13 @@ const StoreInventory = () => {
                         </span>
                       )}
                       {product.gender && (
-                        <span className="text-[10px] uppercase bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-sm">
+                        <span className="text-[10px] uppercase bg-teal-50 text-teal-600 px-1.5 py-0.5 rounded-sm">
                           {product.gender}
                         </span>
                       )}
                     </div>
                     <div className="mt-2 flex justify-between items-end">
-                      <span className="font-bold text-indigo-600">Bs. {product.sellingPrice}</span>
+                      <span className="font-bold text-teal-600">Bs. {product.sellingPrice}</span>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                         product.units > 5 ? 'bg-green-100 text-green-800' :
                         product.units > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
@@ -323,7 +323,7 @@ const StoreInventory = () => {
               <button
                 onClick={() => setPaymentMethod('Cash')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-md ${
-                  paymentMethod === 'Cash' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white hover:bg-gray-50'
+                  paymentMethod === 'Cash' ? 'bg-teal-50 border-teal-500 text-teal-700' : 'bg-white hover:bg-gray-50'
                 }`}
               >
                 <CreditCard className="w-4 h-4" /> Efectivo
@@ -331,7 +331,7 @@ const StoreInventory = () => {
               <button
                 onClick={() => setPaymentMethod('QR')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-md ${
-                  paymentMethod === 'QR' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white hover:bg-gray-50'
+                  paymentMethod === 'QR' ? 'bg-teal-50 border-teal-500 text-teal-700' : 'bg-white hover:bg-gray-50'
                 }`}
               >
                 <QrCode className="w-4 h-4" /> QR
@@ -360,7 +360,7 @@ const StoreInventory = () => {
 
             <div className="flex justify-between items-center pt-2 border-t">
               <span className="font-bold text-lg">Total a Pagar:</span>
-              <span className="font-bold text-2xl text-indigo-600">Bs. {(cartTotal || 0).toFixed(2)}</span>
+              <span className="font-bold text-2xl text-teal-600">Bs. {(cartTotal || 0).toFixed(2)}</span>
             </div>
           </div>
 
@@ -368,7 +368,7 @@ const StoreInventory = () => {
             onClick={handleCheckout}
             disabled={cart.length === 0}
             className={`w-full py-3 rounded-lg font-bold text-white transition-colors ${
-              cart.length > 0 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 cursor-not-allowed'
+              cart.length > 0 ? 'bg-teal-600 hover:bg-teal-700' : 'bg-gray-300 cursor-not-allowed'
             }`}
           >
             Confirmar Venta

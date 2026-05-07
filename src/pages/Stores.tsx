@@ -140,7 +140,7 @@ const Stores = () => {
                 placeholder="Nombre de la sucursal"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 required
               />
             </div>
@@ -150,12 +150,12 @@ const Stores = () => {
                 placeholder="Ubicación (opcional)"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
             <button
               type="submit"
-              className="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700"
             >
               <Plus className="w-5 h-5 mr-1" /> Añadir
             </button>
@@ -197,7 +197,7 @@ const Stores = () => {
       <section className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios (Firebase)</h1>
 
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg">
+        <div className="bg-teal-50 border border-teal-200 text-teal-800 p-4 rounded-lg">
           <strong>Nota:</strong> Ahora que el sistema usa Firebase, la creación de nuevos usuarios debe realizarse desde la <strong>Consola de Firebase (Authentication)</strong> para mayor seguridad.
         </div>
 
@@ -267,7 +267,7 @@ const Stores = () => {
             <div className="md:col-span-2 flex justify-end">
               <button
                 type="submit"
-                className="inline-flex justify-center items-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex justify-center items-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700"
               >
                 Crear Usuario
               </button>
@@ -302,7 +302,7 @@ const Stores = () => {
                           <Shield className="w-3 h-3 mr-1" /> Admin
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                           Vendedor
                         </span>
                       )}
@@ -315,7 +315,7 @@ const Stores = () => {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleOpenEditUser(user)}
-                            className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                            className="text-teal-600 hover:text-teal-900 flex items-center gap-1"
                             title="Asignar Sucursal"
                           >
                             <Edit2 className="w-4 h-4" /> Editar
@@ -341,8 +341,8 @@ const Stores = () => {
       {isEditUserModalOpen && editingUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-indigo-50">
-              <h2 className="text-xl font-semibold text-indigo-900 flex items-center gap-2">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-teal-50">
+              <h2 className="text-xl font-semibold text-teal-900 flex items-center gap-2">
                 <Edit2 className="w-5 h-5" />
                 Asignar Sucursal
               </h2>
@@ -362,7 +362,7 @@ const Stores = () => {
                 <select
                   value={editStoreId}
                   onChange={(e) => setEditStoreId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 >
                   <option value="">Ninguna / Todas (Acceso Global)</option>
                   <option value="bodega">Bodega Central</option>
@@ -385,7 +385,7 @@ const Stores = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700"
                 >
                   Guardar Cambios
                 </button>

@@ -1,6 +1,6 @@
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Package, Store, ShoppingCart, FileText } from 'lucide-react';
+import { LogOut, Store, ShoppingCart, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { InventoryProvider } from '../context/InventoryContext';
@@ -25,7 +25,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
-              <Package className="h-6 w-6 text-primary-600" />
+              <img src="/logo_piel_divina.jpeg" alt="Logo Piel Divina" className="h-10 w-10 rounded-full object-cover shadow-sm border border-teal-100" />
               <Link to="/" className="text-xl font-bold text-gray-900">
                 Piel Divina
               </Link>
@@ -37,7 +37,7 @@ export default function Layout() {
                 <>
                   <Link
                     to="/inventory"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/inventory') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/inventory') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     Inventario General
                   </Link>
@@ -45,7 +45,7 @@ export default function Layout() {
               )}
               <Link
                 to="/pos"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/pos') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/pos') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <ShoppingCart className="w-4 h-4" /> POS
               </Link>
@@ -53,13 +53,13 @@ export default function Layout() {
                 <>
                   <Link
                     to="/stores"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/stores') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/stores') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     <Store className="w-4 h-4" /> Tiendas y Usuarios
                   </Link>
                   <Link
                     to="/reports"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/reports') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/reports') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     <FileText className="w-4 h-4" /> Reportes
                   </Link>
@@ -74,7 +74,7 @@ export default function Layout() {
               <span className="text-xs text-gray-500 capitalize">{user.role === 'admin' ? 'Admin' : 'Vendedor'}</span>
             </div>
             {!isAdmin && (
-              <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              <div className="flex items-center gap-1 text-xs text-teal-600 bg-teal-50 px-2 py-1 rounded-full">
                 <Store className="w-3 h-3" />
                 Sucursal Asignada
               </div>

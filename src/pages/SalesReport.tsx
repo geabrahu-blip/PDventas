@@ -61,7 +61,7 @@ const SalesReport = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FileText className="w-6 h-6 text-indigo-600" />
+          <FileText className="w-6 h-6 text-teal-600" />
           Reporte de Ventas
         </h1>
       </div>
@@ -75,7 +75,7 @@ const SalesReport = () => {
           <select
             value={filterStore}
             onChange={(e) => setFilterStore(e.target.value)}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            className="border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
           >
             <option value="all">Todas las sucursales</option>
             {stores.map(store => (
@@ -92,7 +92,7 @@ const SalesReport = () => {
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            className="border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
 
@@ -106,7 +106,7 @@ const SalesReport = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-indigo-500">
+        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-teal-500">
           <p className="text-sm font-medium text-gray-500">Total Ingresos (Filtro Actual)</p>
           <p className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-green-500" /> Bs. {(totalSalesAmount || 0).toFixed(2)}
@@ -159,7 +159,7 @@ const SalesReport = () => {
                       {sale.paymentMethod}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-indigo-600">
+                  <td className="px-6 py-4 text-right font-bold text-teal-600">
                     Bs. {(sale.total || 0).toFixed(2)}
                   </td>
                   {isAdmin && (
