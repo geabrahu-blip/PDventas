@@ -25,6 +25,11 @@ export interface Product {
   capacity?: string; // e.g., '100 ml', '50 g'
   categoryType?: string; // e.g., 'Skincare', 'Makeup'
   barcode?: string;
+  skinType?: string;
+  expirationDate?: string;
+  isCrueltyFree?: boolean;
+  isVegan?: boolean;
+  hasSpf?: boolean;
 
 }
 
@@ -42,6 +47,11 @@ export interface InventoryItem {
   capacity?: string;
   categoryType?: string;
   barcode?: string;
+  skinType?: string;
+  expirationDate?: string;
+  isCrueltyFree?: boolean;
+  isVegan?: boolean;
+  hasSpf?: boolean;
   image: string;
   priceBs: number;
   wholesalePrice: number;
@@ -60,6 +70,11 @@ export interface PublicCatalogItem {
   gender?: string;
   capacity?: string;
   categoryType?: string;
+  skinType?: string;
+  expirationDate?: string;
+  isCrueltyFree?: boolean;
+  isVegan?: boolean;
+  hasSpf?: boolean;
   image: string;
   sellingPrice: number;
   // NO priceBs or wholesalePrice

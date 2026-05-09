@@ -23,6 +23,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [capacity, setCapacity] = useState('');
   const [categoryType, setCategoryType] = useState('');
   const [barcode, setBarcode] = useState('');
+  const [skinType, setSkinType] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
+  const [isCrueltyFree, setIsCrueltyFree] = useState(false);
+  const [isVegan, setIsVegan] = useState(false);
+  const [hasSpf, setHasSpf] = useState(false);
   const [updatePricesAllStores, setUpdatePricesAllStores] = useState(false);
 
   // Autocomplete State
@@ -61,6 +66,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCapacity(p.capacity || '');
     setCategoryType(p.categoryType || '');
     setBarcode(p.barcode || '');
+    setSkinType(p.skinType || '');
+    setExpirationDate(p.expirationDate || '');
+    setIsCrueltyFree(p.isCrueltyFree || false);
+    setIsVegan(p.isVegan || false);
+    setHasSpf(p.hasSpf || false);
     setImage(p.image || '');
     setPriceBs(p.priceBs || '');
     setWholesalePrice(p.wholesalePrice || '');
@@ -83,6 +93,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setCapacity(editingProduct.capacity || '');
       setCategoryType(editingProduct.categoryType || '');
       setBarcode(editingProduct.barcode || '');
+      setSkinType(editingProduct.skinType || '');
+      setExpirationDate(editingProduct.expirationDate || '');
+      setIsCrueltyFree(editingProduct.isCrueltyFree || false);
+      setIsVegan(editingProduct.isVegan || false);
+      setHasSpf(editingProduct.hasSpf || false);
       setPriceBs(editingProduct.priceBs);
       setUnits(editingProduct.units);
       setWholesalePrice(editingProduct.wholesalePrice);
@@ -102,6 +117,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCapacity('');
     setCategoryType('');
     setBarcode('');
+    setSkinType('');
+    setExpirationDate('');
+    setIsCrueltyFree(false);
+    setIsVegan(false);
+    setHasSpf(false);
     setPriceBs('');
     setUnits('');
     setWholesalePrice('');
@@ -152,6 +172,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       capacity,
       categoryType,
       barcode,
+      skinType: skinType || undefined,
+      expirationDate: expirationDate || undefined,
+      isCrueltyFree,
+      isVegan,
+      hasSpf,
       image,
       priceBs: Number(priceBs),
       units: Number(units),
@@ -348,14 +373,46 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         </div>
 
         <div className="col-span-1">
-          <label htmlFor="prod-category" className="block text-sm font-medium text-gray-700 mb-1">Categoría Libre (Opcional)</label>
-          <input
+          <label htmlFor="prod-category" className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+          <select
             id="prod-category"
-            type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Otra categorización"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          >
+            <option value="">Seleccionar...</option>
+            <option value="Skincare">Skincare</option>
+            <option value="Maquillaje">Maquillaje</option>
+            <option value="Capilar">Capilar</option>
+            <option value="Protección Solar">Protección Solar</option>
+            <option value="Accesorios">Accesorios</option>
+          </select>
+        </div>
+
+        <div className="col-span-1">
+          <label htmlFor="prod-skin-type" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Piel</label>
+          <select
+            id="prod-skin-type"
+            value={skinType}
+            onChange={(e) => setSkinType(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          >
+            <option value="">Seleccionar...</option>
+            <option value="Grasa">Grasa</option>
+            <option value="Seca">Seca</option>
+            <option value="Mixta">Mixta</option>
+            <option value="Sensible">Sensible</option>
+          </select>
+        </div>
+
+        <div className="col-span-1">
+          <label htmlFor="prod-expiration-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Vencimiento</label>
+          <input
+            id="prod-expiration-date"
+            type="date"
+            value={expirationDate}
+            onChange={(e) => setExpirationDate(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-gray-700"
           />
         </div>
 
@@ -385,6 +442,45 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             onChange={(e) => setUnits(Number(e.target.value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
+        </div>
+
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2 mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200 flex flex-wrap gap-6 items-center">
+          <div className="flex items-center">
+            <input
+              id="prod-cruelty-free"
+              type="checkbox"
+              checked={isCrueltyFree}
+              onChange={(e) => setIsCrueltyFree(e.target.checked)}
+              className="w-4 h-4 text-primary-600 bg-white border-gray-300 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="prod-cruelty-free" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+              Cruelty Free
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              id="prod-vegan"
+              type="checkbox"
+              checked={isVegan}
+              onChange={(e) => setIsVegan(e.target.checked)}
+              className="w-4 h-4 text-primary-600 bg-white border-gray-300 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="prod-vegan" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+              Vegano
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              id="prod-spf"
+              type="checkbox"
+              checked={hasSpf}
+              onChange={(e) => setHasSpf(e.target.checked)}
+              className="w-4 h-4 text-primary-600 bg-white border-gray-300 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="prod-spf" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+              SPF
+            </label>
+          </div>
         </div>
 
         {/* Precios de Entrada */}

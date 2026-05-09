@@ -69,6 +69,11 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
       gender: newProduct.gender || existingInv.gender,
       capacity: newProduct.capacity || existingInv.capacity,
       categoryType: newProduct.categoryType || existingInv.categoryType,
+      skinType: newProduct.skinType ?? existingInv.skinType,
+      expirationDate: newProduct.expirationDate ?? existingInv.expirationDate,
+      isCrueltyFree: newProduct.isCrueltyFree ?? existingInv.isCrueltyFree,
+      isVegan: newProduct.isVegan ?? existingInv.isVegan,
+      hasSpf: newProduct.hasSpf ?? existingInv.hasSpf,
       image: newProduct.image || existingInv.image, // update image if new one provided
     };
     const sanitizedUpdatedInv = JSON.parse(JSON.stringify(updatedInv));
@@ -87,6 +92,11 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
       category: newProduct.category,
       gender: newProduct.gender,
       barcode: newProduct.barcode,
+      skinType: newProduct.skinType,
+      expirationDate: newProduct.expirationDate,
+      isCrueltyFree: newProduct.isCrueltyFree,
+      isVegan: newProduct.isVegan,
+      hasSpf: newProduct.hasSpf,
       image: newProduct.image,
       priceBs: newProduct.priceBs,
       wholesalePrice: newProduct.wholesalePrice,
@@ -146,6 +156,11 @@ export const updateProduct = async (updatedProduct: Product, updatePricesAllStor
       gender: updatedProduct.gender,
       capacity: updatedProduct.capacity,
       categoryType: updatedProduct.categoryType,
+      skinType: updatedProduct.skinType,
+      expirationDate: updatedProduct.expirationDate,
+      isCrueltyFree: updatedProduct.isCrueltyFree,
+      isVegan: updatedProduct.isVegan,
+      hasSpf: updatedProduct.hasSpf,
       image: updatedProduct.image || inv.image,
       barcode: updatedProduct.barcode || inv.barcode,
     };
@@ -205,6 +220,11 @@ export const syncToPublicCatalog = async (item: InventoryItem, isDelete: boolean
       gender: item.gender,
       capacity: item.capacity,
       categoryType: item.categoryType,
+      skinType: item.skinType,
+      expirationDate: item.expirationDate,
+      isCrueltyFree: item.isCrueltyFree,
+      isVegan: item.isVegan,
+      hasSpf: item.hasSpf,
       image: item.image,
       sellingPrice: item.sellingPrice,
     };
