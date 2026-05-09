@@ -16,6 +16,7 @@ const Inventory = () => {
   // Safe default to prevent length/map crashes on completely undefined inventory
   const products = rawProducts || [];
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
 
   // Single Transfer state
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
@@ -229,13 +230,27 @@ const Inventory = () => {
   const safeToLower = (val: any) => (val ? String(val).toLowerCase() : '');
   const searchLower = safeToLower(searchTerm);
 
-  const filteredProducts = (products || []).filter(p =>
-    safeToLower(p?.name).includes(searchLower) ||
-    safeToLower(p?.barcode).includes(searchLower) ||
-    safeToLower(p?.brand).includes(searchLower) ||
-    safeToLower(p?.category).includes(searchLower) ||
-    safeToLower(p?.gender).includes(searchLower)
-  );
+  const filteredProducts = (products || []).filter(p => {
+    // Text search filter
+    const matchesSearch =
+      safeToLower(p?.name).includes(searchLower) ||
+      safeToLower(p?.barcode).includes(searchLower) ||
+      safeToLower(p?.brand).includes(searchLower) ||
+      safeToLower(p?.category).includes(searchLower) ||
+      safeToLower(p?.gender).includes(searchLower);
+
+    // Store ID filter
+    let matchesStore = true;
+    if (selectedStoreId !== 'all') {
+      if (selectedStoreId === 'bodega') {
+        matchesStore = !p?.storeId || p?.storeId === 'bodega';
+      } else {
+        matchesStore = p?.storeId === selectedStoreId;
+      }
+    }
+
+    return matchesSearch && matchesStore;
+  });
 
   if (isBulkTransferOpen) {
     const bulkSearchLower = safeToLower(bulkSearchTerm);
