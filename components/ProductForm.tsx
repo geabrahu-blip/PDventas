@@ -21,7 +21,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [wholesalePrice, setWholesalePrice] = useState<number | ''>('');
   const [sellingPrice, setSellingPrice] = useState<number | ''>('');
   const [capacity, setCapacity] = useState('');
-  const [categoryType, setCategoryType] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
   const [barcode, setBarcode] = useState('');
   const [updatePricesAllStores, setUpdatePricesAllStores] = useState(false);
 
@@ -29,7 +29,6 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [existingBrands, setExistingBrands] = useState<string[]>([]);
   const [globalProducts, setGlobalProducts] = useState<InventoryItem[]>([]);
   const [showProductSearch, setShowProductSearch] = useState(false);
-  const [productSearchTerm, setProductSearchTerm] = useState('');
 
   useEffect(() => {
     // Load existing data for autocompletion
@@ -59,7 +58,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCategory(p.category || '');
     setGender(p.gender || '');
     setCapacity(p.capacity || '');
-    setCategoryType(p.categoryType || '');
+    setExpirationDate(p.expirationDate || '');
     setBarcode(p.barcode || '');
     setImage(p.image || '');
     setPriceBs(p.priceBs || '');
@@ -68,7 +67,6 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
     // Reset search
     setShowProductSearch(false);
-    setProductSearchTerm('');
 
     // Auto focus the units field if possible, but user will naturally click it
   };
@@ -81,7 +79,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setCategory(editingProduct.category || '');
       setGender(editingProduct.gender || '');
       setCapacity(editingProduct.capacity || '');
-      setCategoryType(editingProduct.categoryType || '');
+      setExpirationDate(editingProduct.expirationDate || '');
       setBarcode(editingProduct.barcode || '');
       setPriceBs(editingProduct.priceBs);
       setUnits(editingProduct.units);
@@ -100,7 +98,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCategory('');
     setGender('');
     setCapacity('');
-    setCategoryType('');
+    setExpirationDate('');
     setBarcode('');
     setPriceBs('');
     setUnits('');
@@ -150,7 +148,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       category,
       gender,
       capacity,
-      categoryType,
+      expirationDate,
       barcode,
       image,
       priceBs: Number(priceBs),
@@ -168,8 +166,8 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     : '0.00';
 
   const filteredProducts = globalProducts.filter(p =>
-    p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-    (p.brand && p.brand.toLowerCase().includes(productSearchTerm.toLowerCase()))
+    p.name.toLowerCase().includes(name.toLowerCase()) ||
+    (p.barcode && p.barcode.toLowerCase().includes(name.toLowerCase()))
   ).slice(0, 5); // Limit to top 5 results
 
   return (
@@ -189,25 +187,61 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           )}
         </h2>
 
-        {!editingProduct && (
-          <div className="relative w-full sm:w-72">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Autocompletar producto..."
-                value={productSearchTerm}
-                onChange={(e) => {
-                  setProductSearchTerm(e.target.value);
-                  setShowProductSearch(true);
-                }}
-                onFocus={() => setShowProductSearch(true)}
-                className="w-full pl-9 pr-3 py-1.5 text-sm border border-teal-200 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-teal-50/30"
-              />
-            </div>
+      </div>
 
-            {showProductSearch && productSearchTerm && (
-              <div className="absolute z-50 top-full mt-1 w-full bg-white border border-gray-200 shadow-xl rounded-md overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Imagen */}
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 flex gap-4 items-start">
+          <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden shrink-0">
+            {image ? (
+              <img src={image} alt="Preview" className="w-full h-full object-cover" />
+            ) : (
+              <ImageIcon className="h-8 w-8 text-gray-400" />
+            )}
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Producto</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+            />
+          </div>
+        </div>
+
+        {/* Código de Barras */}
+        <div className="col-span-1">
+          <label htmlFor="prod-barcode" className="block text-sm font-medium text-gray-700 mb-1">Código (SKU/Balanza)</label>
+          <input
+            id="prod-barcode"
+            type="text"
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            className="w-full px-3 py-2 border border-blue-100 bg-blue-50/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Ej. CERA-100"
+          />
+        </div>
+
+        {/* Nombre, Marca, Categoría */}
+        <div className="col-span-1 md:col-span-1 lg:col-span-3 relative">
+          <label htmlFor="prod-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Producto</label>
+          <input
+            id="prod-name"
+            type="text"
+            required
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (!editingProduct) setShowProductSearch(true);
+            }}
+            onFocus={() => { if (!editingProduct) setShowProductSearch(true); }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Busca por nombre o código..."
+          />
+          {!editingProduct && showProductSearch && name && (
+            <>
+              <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 shadow-xl rounded-md overflow-hidden">
                 {filteredProducts.length > 0 ? (
                   <ul className="max-h-60 overflow-y-auto">
                     {filteredProducts.map(p => (
@@ -234,61 +268,9 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
                   <div className="px-4 py-3 text-sm text-gray-500">No se encontraron productos similares.</div>
                 )}
               </div>
-            )}
-
-            {/* Click away backdrop for search */}
-            {showProductSearch && (
               <div className="fixed inset-0 z-40" onClick={() => setShowProductSearch(false)} />
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Imagen */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4 flex gap-4 items-start">
-          <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden shrink-0">
-            {image ? (
-              <img src={image} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-              <ImageIcon className="h-8 w-8 text-gray-400" />
-            )}
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Producto</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-            />
-          </div>
-        </div>
-
-        {/* Código de Barras */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4">
-          <label htmlFor="prod-barcode" className="block text-sm font-medium text-gray-700 mb-1">Código de Barras / SKU (Opcional)</label>
-          <input
-            id="prod-barcode"
-            type="text"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Ej. 7702004000123"
-          />
-        </div>
-
-        {/* Nombre, Marca, Categoría */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
-          <label htmlFor="prod-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Producto</label>
-          <input
-            id="prod-name"
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
+            </>
+          )}
         </div>
 
         <div className="col-span-1">
@@ -310,52 +292,14 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         </div>
 
         <div className="col-span-1">
-          <label htmlFor="prod-capacity" className="block text-sm font-medium text-gray-700 mb-1">Capacidad (ml / g)</label>
-          <input
-            id="prod-capacity"
-            type="text"
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Ej. 100 ml, 50 g"
-          />
-        </div>
-
-        <div className="col-span-1">
-          <label htmlFor="prod-category-type" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Categoría (Opcional)</label>
-          <select
-            id="prod-category-type"
-            value={categoryType}
-            onChange={(e) => setCategoryType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-          >
-            <option value="">Seleccionar...</option>
-            <option value="Labial">Labial</option>
-            <option value="Base">Base</option>
-            <option value="Eau De Cologne">Eau De Cologne</option>
-            <option value="Extrait de Parfum">Extrait de Parfum</option>
-            <option value="Parfum">Parfum</option>
-            <option value="Fragrance Mist">Fragrance Mist</option>
-            <option value="Shimmer Fragrance Mist">Shimmer Fragrance Mist</option>
-            <option value="Body Spray">Body Spray</option>
-            <option value="Fragrance Lotion">Fragrance Lotion</option>
-            <option value="Shimmer Fragrance Lotion">Shimmer Fragrance Lotion</option>
-            <option value="Rubor">Rubor</option>
-            <option value="Aftershave">Aftershave</option>
-            <option value="Roll-on">Roll-on</option>
-            <option value="Set / Estuche">Set / Estuche</option>
-          </select>
-        </div>
-
-        <div className="col-span-1">
-          <label htmlFor="prod-category" className="block text-sm font-medium text-gray-700 mb-1">Categoría Libre (Opcional)</label>
+          <label htmlFor="prod-category" className="block text-sm font-medium text-gray-700 mb-1">Categoría (Opcional)</label>
           <input
             id="prod-category"
             type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Otra categorización"
+            placeholder="Ej. EDP, EDT, Splash"
           />
         </div>
 
@@ -374,34 +318,85 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           </select>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-1">
-          <label htmlFor="prod-units" className="block text-sm font-medium text-gray-700 mb-1">Unidades a ingresar en Bodega</label>
-          <input
-            id="prod-units"
-            type="number"
-            min="1"
-            required
-            value={units}
-            onChange={(e) => setUnits(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        {/* Precios de Entrada */}
         <div className="col-span-1">
-          <label htmlFor="prod-price-bs" className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Bs)</label>
+          <label htmlFor="prod-capacity" className="block text-sm font-medium text-gray-700 mb-1">Presentación (ml/g)</label>
           <input
-            id="prod-price-bs"
-            type="number"
-            step="0.01"
-            required
-            value={priceBs}
-            onChange={(e) => setPriceBs(Number(e.target.value))}
+            id="prod-capacity"
+            type="text"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Ej. 236ml"
           />
         </div>
 
-        {/* Precios de Salida */}
+        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+          <div className="w-full sm:w-1/4">
+            <label htmlFor="prod-expiration" className="block text-sm font-medium text-gray-700 mb-1">Vencimiento (Opcional)</label>
+            <input
+              id="prod-expiration"
+              type="date"
+              value={expirationDate}
+              onChange={(e) => setExpirationDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-4 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-gray-100 pt-4">
+          <div className="col-span-1">
+            <label htmlFor="prod-units" className="block text-sm font-medium text-gray-700 mb-1">Unidades</label>
+            <input
+              id="prod-units"
+              type="number"
+              min="1"
+              required
+              value={units}
+              onChange={(e) => setUnits(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label htmlFor="prod-price-bs" className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Bs)</label>
+            <input
+              id="prod-price-bs"
+              type="number"
+              step="0.01"
+              required
+              value={priceBs}
+              onChange={(e) => setPriceBs(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label htmlFor="prod-price-mayor" className="block text-sm font-medium text-gray-700 mb-1">Precio x Mayor</label>
+            <input
+              id="prod-price-mayor"
+              type="number"
+              step="0.01"
+              required
+              value={wholesalePrice}
+              onChange={(e) => setWholesalePrice(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label htmlFor="prod-price-unidad" className="block text-sm font-medium text-gray-700 mb-1">Precio Unidad</label>
+            <input
+              id="prod-price-unidad"
+              type="number"
+              step="0.01"
+              required
+              value={sellingPrice}
+              onChange={(e) => setSellingPrice(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </div>
+
         {editingProduct && (
           <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2 mb-2 p-3 bg-teal-50 rounded-lg border border-teal-100 flex items-start gap-3">
             <div className="flex items-center h-5">
@@ -425,32 +420,6 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             </div>
           </div>
         )}
-
-        <div className="col-span-1">
-          <label htmlFor="prod-price-mayor" className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (x Mayor)</label>
-          <input
-            id="prod-price-mayor"
-            type="number"
-            step="0.01"
-            required
-            value={wholesalePrice}
-            onChange={(e) => setWholesalePrice(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        <div className="col-span-1">
-          <label htmlFor="prod-price-unidad" className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (Unidad)</label>
-          <input
-            id="prod-price-unidad"
-            type="number"
-            step="0.01"
-            required
-            value={sellingPrice}
-            onChange={(e) => setSellingPrice(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
