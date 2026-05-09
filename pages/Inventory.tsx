@@ -256,7 +256,7 @@ const Inventory = () => {
           </h1>
           <button
             onClick={() => setIsBulkTransferOpen(false)}
-            className="text-gray-600 hover:text-gray-900 font-medium px-4 py-2 border border-gray-300 rounded-md bg-white"
+            className="text-gray-500 hover:text-gray-700 font-medium self-start sm:self-auto"
           >
             &larr; Volver al Inventario
           </button>
@@ -413,31 +413,31 @@ const Inventory = () => {
           <Package className="w-6 h-6 text-teal-600" />
           Inventario Global y Transferencias
         </h1>
-        <div className="flex flex-wrap gap-2 justify-end">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:justify-end w-full sm:w-auto">
           {isAdmin && (
             <>
               <button
                 onClick={handleSyncPublicCatalog}
                 disabled={isSyncing}
-                className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto"
                 title="Sincronizar todos los productos a la Vitrina Pública"
               >
                 <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
-                Sincronizar Catálogo
+                Sincronizar
               </button>
             </>
           )}
           <button
             onClick={() => setIsBulkTransferOpen(true)}
-            className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 flex items-center justify-center gap-2"
+            className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Truck className="w-5 h-5" />
-            Nuevo Envío Múltiple
+            Envío Múltiple
           </button>
           {isAdmin && (
             <button
               onClick={() => setIsAddProductOpen(!isAddProductOpen)}
-              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 flex items-center justify-center gap-2"
+              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Plus className="w-5 h-5" />
               {isAddProductOpen ? 'Cerrar Formulario' : 'Añadir Producto'}
@@ -464,8 +464,8 @@ const Inventory = () => {
         </div>
       )}
 
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="relative max-w-md">
+      <div className="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
@@ -474,6 +474,19 @@ const Inventory = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
+        </div>
+        <div className="w-full sm:w-auto">
+          <select
+            value={selectedStoreId}
+            onChange={(e) => setSelectedStoreId(e.target.value)}
+            className="w-full sm:w-auto border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 py-2 pl-3 pr-10 border"
+          >
+            <option value="all">Todas las ubicaciones</option>
+            <option value="bodega">Bodega Central</option>
+            {stores.map(store => (
+              <option key={store.id} value={store.id}>{store.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
