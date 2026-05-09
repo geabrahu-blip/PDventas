@@ -24,6 +24,7 @@ export interface Product {
   gender?: string; // e.g. 'Mujer' | 'Varón' | 'Unisex'
   capacity?: string; // e.g., '100 ml', '50 g'
   categoryType?: string; // e.g., 'Skincare', 'Makeup'
+  expirationDate?: string;
   barcode?: string;
 
 }
@@ -41,6 +42,7 @@ export interface InventoryItem {
   gender?: string;
   capacity?: string;
   categoryType?: string;
+  expirationDate?: string;
   barcode?: string;
   image: string;
   priceBs: number;
@@ -60,6 +62,7 @@ export interface PublicCatalogItem {
   gender?: string;
   capacity?: string;
   categoryType?: string;
+  expirationDate?: string;
   image: string;
   sellingPrice: number;
   // NO priceBs or wholesalePrice
