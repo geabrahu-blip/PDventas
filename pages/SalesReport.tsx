@@ -3,6 +3,7 @@ import { Sale, Store } from '../types';
 import { getSales, getStores, deleteSale } from '../services/db';
 import { FileText, Calendar, Filter, DollarSign, Trash2, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import ReceiptModal from '../components/ReceiptModal';
 
 const SalesReport = () => {
   const { isAdmin } = useAuth();
