@@ -229,7 +229,7 @@ const Inventory = () => {
     if (!fullEditItem) return;
 
     try {
-      const { id, productId, ...restForm } = fullEditForm;
+      const { id: _id, productId: _productId, storeId: _storeId, units: _units, lastUpdated: _lastUpdated, ...restForm } = fullEditForm;
       const cleanForm = Object.fromEntries(
         Object.entries(restForm).filter(([_, v]) => v !== undefined)
       );
