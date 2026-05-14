@@ -2,7 +2,9 @@ import ProductForm from "../components/ProductForm";
 import React, { useState } from 'react';
 import { InventoryItem } from '../types';
 import { addTransfer, updateInventoryItem, deleteInventoryItem, processBulkTransfer, syncAllToPublicCatalog, addProduct } from '../services/db';
-import { Package, ArrowRightLeft, Search, Trash2, Edit2, Truck, Plus, Minus, X, RefreshCw } from 'lucide-react';
+import { Package, ArrowRightLeft, Search, Trash2, Edit3, Truck, Plus, Minus, X, RefreshCw } from 'lucide-react';
+import { collection, doc, updateDoc, increment, addDoc } from 'firebase/firestore';
+import { db } from '../services/firebase';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -29,11 +31,18 @@ const Inventory = () => {
   const [bulkTargetStoreId, setBulkTargetStoreId] = useState('');
   const [bulkSearchTerm, setBulkSearchTerm] = useState('');
 
-  // Edit State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
-  const [editWholesalePrice, setEditWholesalePrice] = useState<number | ''>('');
-  const [editSellingPrice, setEditSellingPrice] = useState<number | ''>('');
+  // Full Edit State
+  const [isFullEditModalOpen, setIsFullEditModalOpen] = useState(false);
+  const [fullEditItem, setFullEditItem] = useState<InventoryItem | null>(null);
+  const [fullEditForm, setFullEditForm] = useState<Partial<InventoryItem>>({});
+
+  // Stock Adjustment State
+  const [isStockAdjustModalOpen, setIsStockAdjustModalOpen] = useState(false);
+  const [stockAdjustItem, setStockAdjustItem] = useState<InventoryItem | null>(null);
+  const [stockAdjustQuantity, setStockAdjustQuantity] = useState<number | ''>('');
+  const [stockAdjustDate, setStockAdjustDate] = useState<string>('');
+  const [stockAdjustReason, setStockAdjustReason] = useState<string>('');
+
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
 
   const getStoreName = (storeId?: string) => {
@@ -157,31 +166,96 @@ const Inventory = () => {
     }
   };
 
-  const handleOpenEdit = (product: InventoryItem) => {
-    setEditItem(product);
-    setEditWholesalePrice(product.wholesalePrice);
-    setEditSellingPrice(product.sellingPrice);
-    setIsEditModalOpen(true);
+  const handleOpenFullEdit = (product: InventoryItem) => {
+    setFullEditItem(product);
+    setFullEditForm({ ...product });
+    setIsFullEditModalOpen(true);
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
+  const handleOpenStockAdjust = (product: InventoryItem) => {
+    setStockAdjustItem(product);
+    setStockAdjustQuantity('');
+    setStockAdjustDate('');
+    setStockAdjustReason('');
+    setIsStockAdjustModalOpen(true);
+  };
+
+  const handleStockAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editItem || editWholesalePrice === '' || editSellingPrice === '') return;
+    if (!stockAdjustItem || stockAdjustQuantity === '' || !stockAdjustDate) return;
+
+    const qty = Number(stockAdjustQuantity);
+    if (isNaN(qty) || qty === 0) {
+      showToast('Por favor ingrese una cantidad válida distinta de cero.', 'error');
+      return;
+    }
 
     try {
+      // Create stock adjustment record
+      const adjustmentsRef = collection(db, 'stock_adjustments');
+      await addDoc(adjustmentsRef, {
+        productId: stockAdjustItem.id,
+        storeId: stockAdjustItem.storeId || 'bodega',
+        quantity: qty,
+        date: stockAdjustDate,
+        reason: stockAdjustReason,
+        createdAt: new Date().toISOString()
+      });
+
+      // Update the inventory item using increment
+      const invRef = doc(db, 'inventory', stockAdjustItem.id);
+      await updateDoc(invRef, {
+        units: increment(qty)
+      });
+
+      // Update local state and trigger public_catalog update via standard path
       const updatedItem = {
-        ...editItem,
-        wholesalePrice: Number(editWholesalePrice),
-        sellingPrice: Number(editSellingPrice)
+        ...stockAdjustItem,
+        units: stockAdjustItem.units + qty
       };
-      await updateInventoryItem(updatedItem);
-      setIsEditModalOpen(false);
-      setEditItem(null);
+      await updateInventoryItem(updatedItem); // Ensures public catalog gets updated if needed
       updateLocalInventoryItem(updatedItem);
-      showToast('Precio actualizado con éxito', 'success');
+
+      setIsStockAdjustModalOpen(false);
+      showToast('Stock ajustado con éxito', 'success');
     } catch (error) {
-      console.error('Error updating price:', error);
-      showToast('Hubo un error al actualizar el precio.', 'error');
+      console.error('Error adjusting stock:', error);
+      showToast('Hubo un error al ajustar el stock.', 'error');
+    }
+  };
+
+  const handleFullEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullEditItem) return;
+
+    try {
+      const { id: _id, productId: _productId, storeId: _storeId, units: _units, lastUpdated: _lastUpdated, ...restForm } = fullEditForm;
+      const cleanForm = Object.fromEntries(
+        Object.entries(restForm).filter(([_, v]) => v !== undefined)
+      );
+
+      // Update the product document
+      const productRef = doc(db, 'products', fullEditItem.productId);
+      await updateDoc(productRef, {
+        ...cleanForm
+      });
+
+      // Since it's from the generic inventory context, we also push it through updateInventoryItem
+      // so it replicates to inventory & public_catalog if needed
+      const updatedInvItem = {
+        ...fullEditItem,
+        ...cleanForm
+      } as InventoryItem;
+
+      await updateInventoryItem(updatedInvItem);
+
+      updateLocalInventoryItem(updatedInvItem);
+      setIsFullEditModalOpen(false);
+      setFullEditItem(null);
+      showToast('Producto actualizado con éxito', 'success');
+    } catch (error) {
+      console.error('Error updating product:', error);
+      showToast('Hubo un error al actualizar el producto.', 'error');
     }
   };
 
@@ -475,19 +549,6 @@ const Inventory = () => {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
-        <div className="w-full sm:w-auto">
-          <select
-            value={selectedStoreId}
-            onChange={(e) => setSelectedStoreId(e.target.value)}
-            className="w-full sm:w-auto border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 py-2 pl-3 pr-10 border"
-          >
-            <option value="all">Todas las ubicaciones</option>
-            <option value="bodega">Bodega Central</option>
-            {stores.map(store => (
-              <option key={store.id} value={store.id}>{store.name}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -551,14 +612,22 @@ const Inventory = () => {
                         <ArrowRightLeft className="w-4 h-4" />
                       </button>
 
+                      <button
+                        onClick={() => handleOpenStockAdjust(product)}
+                        className="inline-flex items-center p-1.5 bg-amber-50 text-amber-600 rounded-md hover:bg-amber-100 transition-colors"
+                        title="Ajustar Stock"
+                      >
+                        <Package className="w-4 h-4" />
+                      </button>
+
                       {isAdmin && (
                         <>
                           <button
-                            onClick={() => handleOpenEdit(product)}
+                            onClick={() => handleOpenFullEdit(product)}
                             className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                            title="Editar Precios de Venta"
+                            title="Editar Completo"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(product.id)}
@@ -585,67 +654,229 @@ const Inventory = () => {
         </div>
       </div>
 
-      {/* Edit Prices Modal */}
-      {isEditModalOpen && editItem && (
+      {/* Stock Adjust Modal */}
+      {isStockAdjustModalOpen && stockAdjustItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-teal-50">
-              <h2 className="text-xl font-semibold text-teal-900 flex items-center gap-2">
-                <Edit2 className="w-5 h-5" />
-                Editar Precios de Venta
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-amber-50">
+              <h2 className="text-xl font-semibold text-amber-900 flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Ajustar Stock
               </h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsStockAdjustModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleStockAdjustSubmit} className="p-6 space-y-4">
               <div className="bg-gray-50 p-3 rounded-md mb-4">
-                <p className="font-medium text-gray-900">{editItem.name}</p>
+                <p className="font-medium text-gray-900">{stockAdjustItem.name}</p>
                 <p className="text-sm text-gray-500">
-                  Ubicación: {getStoreName(editItem.storeId)}
+                  Ubicación: {getStoreName(stockAdjustItem.storeId)}
                 </p>
-                <div className="text-xs text-gray-400 mt-1">
-                  Nota: Al editar aquí solo cambiará el precio de venta en esta ubicación. El precio de compra histórico de este producto no se verá afectado.
-                </div>
+                <p className="text-sm text-gray-700 mt-1 font-medium">
+                  Stock actual: {stockAdjustItem.units}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Use números positivos para añadir stock (Entradas) y números negativos para restar (Salidas).
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (x Mayor)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Bs.</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={editWholesalePrice}
-                    onChange={(e) => setEditWholesalePrice(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad (+/-)</label>
+                <input
+                  type="number"
+                  required
+                  value={stockAdjustQuantity}
+                  onChange={(e) => setStockAdjustQuantity(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                  placeholder="Ej: 5 (entrada) o -3 (salida)"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (Unidad)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Bs.</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={editSellingPrice}
-                    onChange={(e) => setEditSellingPrice(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={stockAdjustDate}
+                  onChange={(e) => setStockAdjustDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                />
               </div>
 
-              <div className="pt-4 flex gap-3 justify-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo (Opcional)</label>
+                <input
+                  type="text"
+                  value={stockAdjustReason}
+                  onChange={(e) => setStockAdjustReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                  placeholder="Ej: Compra de lote, Venta directa, Producto dañado"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3 justify-end border-t border-gray-100 mt-6">
                 <button
                   type="button"
-                  onClick={() => setIsEditModalOpen(false)}
+                  onClick={() => setIsStockAdjustModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700"
+                >
+                  Confirmar Ajuste
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Full Edit Modal */}
+      {isFullEditModalOpen && fullEditItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-teal-50 sticky top-0 z-10 rounded-t-xl">
+              <h2 className="text-xl font-semibold text-teal-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5" />
+                Editar Producto Completo
+              </h2>
+              <button onClick={() => setIsFullEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleFullEditSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Producto</label>
+                  <input
+                    type="text"
+                    required
+                    value={fullEditForm.name || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                  <input
+                    type="text"
+                    value={fullEditForm.brand || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, brand: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                  <input
+                    type="text"
+                    value={fullEditForm.category || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Categoría</label>
+                  <input
+                    type="text"
+                    value={fullEditForm.categoryType || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, categoryType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Capacidad / Volumen</label>
+                  <input
+                    type="text"
+                    value={fullEditForm.capacity || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, capacity: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Género</label>
+                  <select
+                    value={fullEditForm.gender || 'Todos'}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, gender: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  >
+                    <option value="Todos">Todos</option>
+                    <option value="Varón">Varón</option>
+                    <option value="Mujer">Mujer</option>
+                    <option value="Unisex">Unisex</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Código de Barras</label>
+                  <input
+                    type="text"
+                    value={fullEditForm.barcode || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, barcode: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (x Mayor)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Bs.</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={fullEditForm.wholesalePrice || ''}
+                      onChange={(e) => setFullEditForm({ ...fullEditForm, wholesalePrice: e.target.value ? Number(e.target.value) : '' })}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (Unidad)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Bs.</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={fullEditForm.sellingPrice || ''}
+                      onChange={(e) => setFullEditForm({ ...fullEditForm, sellingPrice: e.target.value ? Number(e.target.value) : '' })}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">URL de la Imagen</label>
+                  <input
+                    type="url"
+                    value={fullEditForm.image || ''}
+                    onChange={(e) => setFullEditForm({ ...fullEditForm, image: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3 justify-end border-t border-gray-100 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsFullEditModalOpen(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Cancelar
@@ -654,7 +885,7 @@ const Inventory = () => {
                   type="submit"
                   className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700"
                 >
-                  Guardar Precios
+                  Guardar Cambios
                 </button>
               </div>
             </form>

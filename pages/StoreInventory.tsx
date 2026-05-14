@@ -4,6 +4,7 @@ import { addSale, updateInventoryItem } from '../services/db';
 import { Store as StoreIcon, AlertTriangle, ShoppingCart, CreditCard, QrCode, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
+import ReceiptModal from '../components/ReceiptModal';
 
 const StoreInventory = () => {
   const { user, isAdmin } = useAuth();
@@ -16,6 +17,7 @@ const StoreInventory = () => {
   const [clientName, setClientName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR'>('Cash');
   const [globalDiscount, setGlobalDiscount] = useState<number>(0);
+  const [completedSale, setCompletedSale] = useState<Sale | null>(null);
 
   // Derived Stores
   const stores = useMemo(() => {
@@ -107,7 +109,8 @@ const StoreInventory = () => {
         newSale.globalDiscount = globalDiscount;
       }
 
-      await addSale(newSale);
+      const addedSaleId = await addSale(newSale);
+      const finalSale = { ...newSale, id: addedSaleId } as Sale;
 
       // 2. Update Product Inventory (Deduct stock)
       for (const item of cart) {
@@ -130,11 +133,14 @@ const StoreInventory = () => {
       setCart([]);
       setClientName('');
       setGlobalDiscount(0);
-      alert('Venta registrada con éxito!');
 
       // Reload products to show updated stock
       await refreshInventory();
 
+      // 4. Show the receipt
+      setCompletedSale(finalSale);
+
+      alert('Venta registrada con éxito!');
     } catch (error: any) {
       console.error('Error procesando venta:', error);
       const errorMessage = error?.message || 'Error desconocido';
@@ -142,8 +148,19 @@ const StoreInventory = () => {
     }
   };
 
+  const getStoreName = (storeId: string) => {
+    if (storeId === 'bodega') return 'Bodega Central';
+    const store = stores.find(s => s.id === storeId);
+    return store ? store.name : storeId;
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-8rem)]">
+      <ReceiptModal
+        sale={completedSale}
+        onClose={() => setCompletedSale(null)}
+        getStoreName={getStoreName}
+      />
       {/* Products Section */}
       <div className="flex-1 flex flex-col space-y-4">
         <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
