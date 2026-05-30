@@ -35,6 +35,12 @@ export default function Layout() {
 
             {/* Nav Links */}
             <nav className="hidden md:flex space-x-4">
+              <Link
+                to="/pos"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/pos') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                <ShoppingCart className="w-4 h-4" /> POS
+              </Link>
               {isAdmin && (
                 <>
                   <Link
@@ -86,6 +92,13 @@ export default function Layout() {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-200 shadow-lg absolute w-full left-0">
             <nav className="flex flex-col px-4 pt-2 pb-4 space-y-2">
+              <Link
+                to="/pos"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-md text-base font-medium transition-colors flex items-center gap-2 ${isActive('/pos') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                <ShoppingCart className="w-5 h-5" /> POS
+              </Link>
               {isAdmin && (
                 <>
                   <Link
