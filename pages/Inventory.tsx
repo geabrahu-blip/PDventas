@@ -1,8 +1,8 @@
 import ProductForm from "../components/ProductForm";
 import React, { useState } from 'react';
 import { InventoryItem } from '../types';
-import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct } from '../services/db';
-import { Package, Search, Trash2, Edit2, Plus, RefreshCw } from 'lucide-react';
+import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
+import { Package, Search, Trash2, Edit2, Plus, RefreshCw, Box } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -23,6 +23,48 @@ const Inventory = () => {
   const [editWholesalePrice, setEditWholesalePrice] = useState<number | ''>('');
   const [editSellingPrice, setEditSellingPrice] = useState<number | ''>('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+
+  // Adjust Stock State
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [selectedAdjustItem, setSelectedAdjustItem] = useState<InventoryItem | null>(null);
+  const [adjustQuantity, setAdjustQuantity] = useState<number | ''>('');
+  const [adjustDate, setAdjustDate] = useState(new Date().toISOString().split('T')[0]);
+  const [adjustReason, setAdjustReason] = useState('');
+
+  const handleOpenAdjust = (product: InventoryItem) => {
+    setSelectedAdjustItem(product);
+    setAdjustQuantity('');
+    setAdjustDate(new Date().toISOString().split('T')[0]);
+    setAdjustReason('');
+    setIsAdjustModalOpen(true);
+  };
+
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAdjustItem || adjustQuantity === '' || !adjustDate) return;
+
+    try {
+      await adjustProductStock(
+        selectedAdjustItem.id,
+        Number(adjustQuantity),
+        adjustDate,
+        adjustReason
+      );
+
+      const updatedItem = {
+        ...selectedAdjustItem,
+        units: selectedAdjustItem.units + Number(adjustQuantity)
+      };
+      updateLocalInventoryItem(updatedItem);
+
+      setIsAdjustModalOpen(false);
+      setSelectedAdjustItem(null);
+      showToast('Stock ajustado y registrado en el Kárdex exitosamente', 'success');
+    } catch (error: any) {
+      console.error('Error adjusting stock:', error);
+      showToast(error.message || 'Hubo un error al ajustar el stock.', 'error');
+    }
+  };
 
   const handleOpenEdit = (product: InventoryItem) => {
     setEditItem(product);
