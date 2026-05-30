@@ -16,7 +16,7 @@ import {
   runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem } from '../types';
+import { Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem, KardexLog } from '../types';
 
 // Helper to get a random ID when not provided
 const generateId = () => doc(collection(db, 'dummy')).id;
@@ -216,6 +216,12 @@ export const getInventoryItems = async (): Promise<InventoryItem[]> => {
   const q = query(collection(db, 'inventory'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => doc.data() as InventoryItem);
+};
+
+export const getKardexLogs = async (): Promise<KardexLog[]> => {
+  const q = query(collection(db, 'kardex_logs'), orderBy('timestamp', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as KardexLog));
 };
 
 export interface PaginatedResult {
@@ -547,7 +553,7 @@ export const deleteSale = async (id: string): Promise<void> => {
 export const getAllPublicInventoryItems = async () => {
   try {
     const publicCatalogRef = collection(db, 'public_catalog');
-    const q = query(publicCatalogRef);
+    let q = query(publicCatalogRef);
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map(doc => ({
