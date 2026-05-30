@@ -547,7 +547,7 @@ export const deleteSale = async (id: string): Promise<void> => {
 export const getAllPublicInventoryItems = async () => {
   try {
     const publicCatalogRef = collection(db, 'public_catalog');
-    let q = query(publicCatalogRef);
+    const q = query(publicCatalogRef);
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map(doc => ({
