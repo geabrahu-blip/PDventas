@@ -12,13 +12,51 @@ import {
   startAfter,
   QueryDocumentSnapshot,
   DocumentData,
-  orderBy
+  orderBy,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem } from '../types';
 
 // Helper to get a random ID when not provided
 const generateId = () => doc(collection(db, 'dummy')).id;
+
+export const adjustProductStock = async (
+  productId: string,
+  quantityChange: number,
+  date: string,
+  reason: string
+): Promise<void> => {
+  const inventoryRef = doc(db, 'inventory', productId);
+  const kardexRef = doc(db, 'kardex_logs', generateId());
+
+  await runTransaction(db, async (transaction) => {
+    const inventoryDoc = await transaction.get(inventoryRef);
+    if (!inventoryDoc.exists()) {
+      throw new Error("El producto no existe en el inventario.");
+    }
+
+    const currentUnits = inventoryDoc.data().units || 0;
+    const newUnits = currentUnits + quantityChange;
+
+    if (newUnits < 0) {
+      throw new Error("El stock resultante no puede ser negativo.");
+    }
+
+    // Update stock
+    transaction.update(inventoryRef, { units: newUnits });
+
+    // Create Kardex log
+    transaction.set(kardexRef, {
+      productId: productId,
+      quantity: quantityChange,
+      date: date,
+      reason: reason || 'Ajuste manual',
+      timestamp: new Date().getTime(),
+      type: quantityChange >= 0 ? 'ENTRADA' : 'SALIDA'
+    });
+  });
+};
 
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {

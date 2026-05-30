@@ -1,8 +1,8 @@
 import ProductForm from "../components/ProductForm";
 import React, { useState } from 'react';
 import { InventoryItem } from '../types';
-import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct } from '../services/db';
-import { Package, Search, Trash2, Edit2, Plus, RefreshCw } from 'lucide-react';
+import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
+import { Package, Search, Trash2, Edit2, Plus, RefreshCw, Box } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -23,6 +23,48 @@ const Inventory = () => {
   const [editWholesalePrice, setEditWholesalePrice] = useState<number | ''>('');
   const [editSellingPrice, setEditSellingPrice] = useState<number | ''>('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+
+  // Adjust Stock State
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [selectedAdjustItem, setSelectedAdjustItem] = useState<InventoryItem | null>(null);
+  const [adjustQuantity, setAdjustQuantity] = useState<number | ''>('');
+  const [adjustDate, setAdjustDate] = useState(new Date().toISOString().split('T')[0]);
+  const [adjustReason, setAdjustReason] = useState('');
+
+  const handleOpenAdjust = (product: InventoryItem) => {
+    setSelectedAdjustItem(product);
+    setAdjustQuantity('');
+    setAdjustDate(new Date().toISOString().split('T')[0]);
+    setAdjustReason('');
+    setIsAdjustModalOpen(true);
+  };
+
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAdjustItem || adjustQuantity === '' || !adjustDate) return;
+
+    try {
+      await adjustProductStock(
+        selectedAdjustItem.id,
+        Number(adjustQuantity),
+        adjustDate,
+        adjustReason
+      );
+
+      const updatedItem = {
+        ...selectedAdjustItem,
+        units: selectedAdjustItem.units + Number(adjustQuantity)
+      };
+      updateLocalInventoryItem(updatedItem);
+
+      setIsAdjustModalOpen(false);
+      setSelectedAdjustItem(null);
+      showToast('Stock ajustado y registrado en el Kárdex exitosamente', 'success');
+    } catch (error: any) {
+      console.error('Error adjusting stock:', error);
+      showToast(error.message || 'Hubo un error al ajustar el stock.', 'error');
+    }
+  };
 
   const handleOpenEdit = (product: InventoryItem) => {
     setEditItem(product);
@@ -214,6 +256,13 @@ const Inventory = () => {
                       {isAdmin && (
                         <>
                           <button
+                            onClick={() => handleOpenAdjust(product)}
+                            className="inline-flex items-center p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            title="Ajustar Stock (Kárdex)"
+                          >
+                            <Box className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => handleOpenEdit(product)}
                             className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
                             title="Editar Precios de Venta"
@@ -244,6 +293,87 @@ const Inventory = () => {
           </table>
         </div>
       </div>
+
+      {/* Adjust Stock Modal */}
+      {isAdjustModalOpen && selectedAdjustItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
+              <h2 className="text-xl font-semibold text-blue-900 flex items-center gap-2">
+                <Box className="w-5 h-5" />
+                Ajustar Stock (Kárdex)
+              </h2>
+              <button onClick={() => setIsAdjustModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleAdjustSubmit} className="p-6 space-y-4">
+              <div className="bg-gray-50 p-3 rounded-md mb-4">
+                <p className="font-medium text-gray-900">{selectedAdjustItem.name}</p>
+                <div className="text-sm text-gray-500 mt-1 flex justify-between">
+                  <span>Stock Actual:</span>
+                  <span className="font-bold text-gray-900">{selectedAdjustItem.units} unid.</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cantidad a Ajustar (+ o -)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={adjustQuantity}
+                  onChange={(e) => setAdjustQuantity(e.target.value ? Number(e.target.value) : '')}
+                  placeholder="Ej: 5 para Entrada, -2 para Salida"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Usa números positivos para entradas y negativos para salidas/mermas.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Obligatoria</label>
+                <input
+                  type="date"
+                  required
+                  value={adjustDate}
+                  onChange={(e) => setAdjustDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo (Opcional)</label>
+                <input
+                  type="text"
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value)}
+                  placeholder="Ej: Llegada de proveedor, Producto dañado..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsAdjustModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!adjustQuantity || (selectedAdjustItem.units + Number(adjustQuantity) < 0)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+                >
+                  Confirmar Ajuste
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Prices Modal */}
       {isEditModalOpen && editItem && (
