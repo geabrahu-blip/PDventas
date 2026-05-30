@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { InventoryItem, Store } from '../types';
-import { getInventoryItems, getStores } from '../services/db';
+import { InventoryItem } from '../types';
+import { getInventoryItems } from '../services/db';
 
 interface InventoryContextType {
   inventory: InventoryItem[];
-  stores: Store[];
   isLoading: boolean;
   refreshInventory: () => Promise<void>;
   updateLocalInventoryItem: (item: InventoryItem) => void;
@@ -16,18 +15,13 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [invData, storesData] = await Promise.all([
-        getInventoryItems(),
-        getStores()
-      ]);
+      const invData = await getInventoryItems();
       setInventory(invData);
-      setStores(storesData);
     } catch (error) {
       console.error("Error loading global inventory:", error);
     } finally {
@@ -76,7 +70,6 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     <InventoryContext.Provider
       value={{
         inventory,
-        stores,
         isLoading,
         refreshInventory,
         updateLocalInventoryItem,
