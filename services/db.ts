@@ -21,6 +21,69 @@ import { Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem,
 // Helper to get a random ID when not provided
 const generateId = () => doc(collection(db, 'dummy')).id;
 
+export const processPOSSale = async (
+  clientName: string,
+  items: { productId: string, name: string, quantity: number, price: number, subtotal: number }[],
+  total: number,
+  paymentMethod: 'Cash' | 'QR'
+): Promise<void> => {
+  const saleId = generateId();
+  const saleRef = doc(db, 'sales', saleId);
+  const now = new Date();
+
+  await runTransaction(db, async (transaction) => {
+    // 1. Verify stock for all items (All READS must come before any WRITES in a Firestore Transaction)
+    const inventoryDocs = [];
+    for (const item of items) {
+      const inventoryRef = doc(db, 'inventory', item.productId);
+      const inventoryDoc = await transaction.get(inventoryRef);
+
+      if (!inventoryDoc.exists()) {
+        throw new Error(`Producto ${item.name} no encontrado en el inventario.`);
+      }
+
+      const currentUnits = inventoryDoc.data().units || 0;
+      if (currentUnits < item.quantity) {
+        throw new Error(`Stock insuficiente para ${item.name}. Disponible: ${currentUnits}`);
+      }
+
+      inventoryDocs.push({
+        ref: inventoryRef,
+        item: item,
+        newUnits: currentUnits - item.quantity
+      });
+    }
+
+    // 2. Perform all writes (Updates and Sets)
+    for (const docData of inventoryDocs) {
+      // Deduct stock
+      transaction.update(docData.ref, { units: docData.newUnits });
+
+      // Log to Kardex
+      const kardexRef = doc(db, 'kardex_logs', generateId());
+      transaction.set(kardexRef, {
+        productId: docData.item.productId,
+        quantity: -docData.item.quantity,
+        date: now.toISOString().split('T')[0],
+        reason: 'Venta POS',
+        timestamp: now.getTime(),
+        type: 'SALIDA'
+      });
+    }
+
+    // 3. Create the Sale record
+    transaction.set(saleRef, {
+      storeId: 'bodega', // Hardcoded single store
+      clientName: clientName || 'Cliente Ocasional',
+      items: items,
+      total: total,
+      paymentMethod: paymentMethod,
+      date: now.toISOString(),
+      timestamp: now.getTime() // Useful for queries
+    });
+  });
+};
+
 export const adjustProductStock = async (
   productId: string,
   quantityChange: number,
