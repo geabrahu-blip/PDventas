@@ -109,3 +109,13 @@ export interface Sale {
   paymentMethod: 'Cash' | 'QR';
   date: string;
 }
+
+export interface KardexLog {
+  id: string;
+  productId: string;
+  quantity: number;
+  date: string;
+  reason: string;
+  timestamp: number;
+  type: 'ENTRADA' | 'SALIDA' | 'AJUSTE';
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sale, Store } from '../types';
 import { getSales, getStores, deleteSale } from '../services/db';
-import { FileText, Calendar, Filter, DollarSign, Trash2, Printer } from 'lucide-react';
+import { FileText, Calendar, Filter, DollarSign, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const SalesReport = () => {
@@ -9,9 +9,6 @@ const SalesReport = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
-
-  // Receipt state
-  const [selectedReceipt, setSelectedReceipt] = useState<Sale | null>(null);
 
   // Filters
   const [filterStore, setFilterStore] = useState<string>('all');
@@ -62,103 +59,6 @@ const SalesReport = () => {
 
   return (
     <div className="space-y-6">
-      {/* Receipt Modal */}
-      {selectedReceipt && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm print:bg-white print:p-0 print:backdrop-blur-none">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden print:shadow-none print:w-full print:max-w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center print:hidden">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <Printer className="w-5 h-5 text-teal-600" />
-                Comprobante de Venta
-              </h2>
-              <button onClick={() => setSelectedReceipt(null)} className="text-gray-400 hover:text-gray-600">
-                &times;
-              </button>
-            </div>
-
-            <div className="p-6 text-sm text-gray-800" id="printable-receipt">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold uppercase mb-1">Piel Divina</h3>
-                <p className="text-xs text-gray-500 uppercase">{getStoreName(selectedReceipt.storeId)}</p>
-                <div className="border-b border-dashed border-gray-400 my-4"></div>
-                <h4 className="font-bold uppercase tracking-wider mb-2">Comprobante de Venta</h4>
-              </div>
-
-              <div className="mb-4 space-y-1">
-                <div className="flex justify-between">
-                  <span className="font-semibold">Fecha:</span>
-                  <span>{new Date(selectedReceipt.date).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">Cliente:</span>
-                  <span className="uppercase">{selectedReceipt.clientName || 'Cliente Genérico'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">Atendido por:</span>
-                  <span className="uppercase">Vendedor</span>
-                </div>
-              </div>
-
-              <div className="border-b border-dashed border-gray-400 my-4"></div>
-
-              <table className="w-full text-left mb-4">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="py-2 font-semibold w-12">Cant.</th>
-                    <th className="py-2 font-semibold">Descripción</th>
-                    <th className="py-2 font-semibold text-right">P. Unit</th>
-                    <th className="py-2 font-semibold text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {selectedReceipt.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="py-2 align-top">{item.quantity}</td>
-                      <td className="py-2 align-top pr-2">{item.name}</td>
-                      <td className="py-2 align-top text-right whitespace-nowrap">{(item.price || 0).toFixed(2)}</td>
-                      <td className="py-2 align-top text-right whitespace-nowrap">{(item.quantity * (item.price || 0)).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="border-b border-dashed border-gray-400 my-4"></div>
-
-              <div className="flex justify-between items-center font-bold text-lg">
-                <span>TOTAL A PAGAR:</span>
-                <span>Bs. {(selectedReceipt.total || 0).toFixed(2)}</span>
-              </div>
-
-              <div className="mt-2 text-right text-xs text-gray-600">
-                Método de pago: <span className="uppercase font-semibold">{selectedReceipt.paymentMethod}</span>
-              </div>
-
-              <div className="mt-8 text-center text-xs text-gray-500 uppercase">
-                <p>¡Gracias por su compra!</p>
-                <p>Vuelva pronto</p>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 print:hidden">
-              <button
-                type="button"
-                onClick={() => setSelectedReceipt(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Cerrar
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 flex items-center gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                Imprimir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <FileText className="w-6 h-6 text-teal-600" />
@@ -230,7 +130,7 @@ const SalesReport = () => {
                 <th className="px-6 py-4">Productos</th>
                 <th className="px-6 py-4">Pago</th>
                 <th className="px-6 py-4 text-right">Total</th>
-                <th className="px-6 py-4 text-center">Acciones</th>
+                {isAdmin && <th className="px-6 py-4 text-center">Acciones</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -262,31 +162,22 @@ const SalesReport = () => {
                   <td className="px-6 py-4 text-right font-bold text-teal-600">
                     Bs. {(sale.total || 0).toFixed(2)}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
+                  {isAdmin && (
+                    <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => setSelectedReceipt(sale)}
-                        className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                        title="Imprimir / Ver Recibo"
+                        onClick={() => handleDelete(sale.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 rounded-full transition-colors"
+                        title="Eliminar venta y devolver stock"
                       >
-                        <Printer className="w-5 h-5" />
+                        <Trash2 className="w-5 h-5 mx-auto" />
                       </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => handleDelete(sale.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Eliminar venta y devolver stock"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filteredSales.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={isAdmin ? 7 : 6} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron ventas para los filtros seleccionados.
                   </td>
                 </tr>

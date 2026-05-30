@@ -1,7 +1,7 @@
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Store, ShoppingCart, FileText, Menu, X } from 'lucide-react';
+import { LogOut, Store, ShoppingCart, FileText, Menu, X, Activity } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { InventoryProvider } from '../context/InventoryContext';
@@ -42,6 +42,12 @@ export default function Layout() {
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/inventory') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     Inventario General
+                  </Link>
+                  <Link
+                    to="/kardex"
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/kardex') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <Activity className="w-4 h-4" /> Kárdex
                   </Link>
                   <Link
                     to="/reports"
@@ -88,6 +94,13 @@ export default function Layout() {
                     className={`px-4 py-3 rounded-md text-base font-medium transition-colors ${isActive('/inventory') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     Inventario General
+                  </Link>
+                  <Link
+                    to="/kardex"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`px-4 py-3 rounded-md text-base font-medium transition-colors flex items-center gap-2 ${isActive('/kardex') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <Activity className="w-5 h-5" /> Kárdex
                   </Link>
                   <Link
                     to="/reports"
