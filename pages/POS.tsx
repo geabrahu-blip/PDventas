@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
 import { processPOSSale } from '../services/db';
 import { InventoryItem } from '../types';
 import { Search, ShoppingCart, Plus, Minus, X, CreditCard, Banknote, Package } from 'lucide-react';
+import Receipt, { ReceiptData } from '../components/Receipt';
 
 interface CartItem {
   product: InventoryItem;
@@ -19,6 +20,24 @@ const POS = () => {
   const [clientName, setClientName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR'>('Cash');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastSaleData, setLastSaleData] = useState<ReceiptData | null>(null);
+
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      // Clear the receipt data to hide it and prepare for next sale
+      setLastSaleData(null);
+    };
+
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
+
+  useEffect(() => {
+    // Automatically trigger print dialog when a new sale is completed
+    if (lastSaleData) {
+      window.print();
+    }
+  }, [lastSaleData]);
 
   // Filter products for the catalog
   const filteredProducts = useMemo(() => {
@@ -102,6 +121,19 @@ const POS = () => {
 
       showToast('Venta procesada exitosamente', 'success');
 
+      // Save data for the receipt
+      setLastSaleData({
+        items: cart.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          subtotal: item.product.sellingPrice * item.quantity
+        })),
+        total,
+        clientName,
+        paymentMethod,
+        date: new Date()
+      });
+
       // Reset POS state
       setCart([]);
       setClientName('');
@@ -119,7 +151,10 @@ const POS = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6">
+    <>
+    <Receipt data={lastSaleData} />
+
+    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6 print:hidden">
 
       {/* Left Panel: Catalog */}
       <div className="w-full lg:w-2/3 flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -311,6 +346,7 @@ const POS = () => {
       </div>
 
     </div>
+    </>
   );
 };
 
