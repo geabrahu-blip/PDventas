@@ -282,7 +282,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Ej. Carolina Herrera"
+            placeholder="Ej. CeraVe, The Ordinary, La Roche-Posay"
           />
           <datalist id="brands-list">
             {existingBrands.map((b, idx) => (
@@ -299,12 +299,12 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Ej. EDP, EDT, Splash"
+            placeholder="Ej. Suero, Crema Hidratante, Protector Solar, Limpiador"
           />
         </div>
 
         <div className="col-span-1">
-          <label htmlFor="prod-gender" className="block text-sm font-medium text-gray-700 mb-1">Público / Género</label>
+          <label htmlFor="prod-gender" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Piel</label>
           <select
             id="prod-gender"
             value={gender}
@@ -312,9 +312,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">Seleccionar...</option>
-            <option value="Mujer">Mujer</option>
-            <option value="Varón">Varón</option>
-            <option value="Unisex">Unisex</option>
+            <option value="Todo tipo de piel">Todo tipo de piel</option>
+            <option value="Piel Grasa">Piel Grasa</option>
+            <option value="Piel Seca">Piel Seca</option>
+            <option value="Piel Mixta">Piel Mixta</option>
+            <option value="Piel Sensible">Piel Sensible</option>
           </select>
         </div>
 
@@ -326,7 +328,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Ej. 236ml"
+            placeholder="Ej. 30ml, 50ml"
           />
         </div>
 
