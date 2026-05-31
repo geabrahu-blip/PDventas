@@ -2,7 +2,7 @@ import ProductForm from "../components/ProductForm";
 import React, { useState } from 'react';
 import { InventoryItem } from '../types';
 import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
-import { Package, Search, Trash2, Edit2, Plus, RefreshCw, Box } from 'lucide-react';
+import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -21,8 +21,6 @@ const Inventory = () => {
   // Edit State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
-  const [editWholesalePrice, setEditWholesalePrice] = useState<number | ''>('');
-  const [editSellingPrice, setEditSellingPrice] = useState<number | ''>('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
 
   // Modal States
@@ -74,29 +72,25 @@ const Inventory = () => {
 
   const handleOpenEdit = (product: InventoryItem) => {
     setEditItem(product);
-    setEditWholesalePrice(product.wholesalePrice);
-    setEditSellingPrice(product.sellingPrice);
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem || editWholesalePrice === '' || editSellingPrice === '') return;
+  const handleUpdateProduct = async (productData: any) => {
+    if (!editItem) return;
 
     try {
       const updatedItem = {
         ...editItem,
-        wholesalePrice: Number(editWholesalePrice),
-        sellingPrice: Number(editSellingPrice)
+        ...productData
       };
       await updateInventoryItem(updatedItem);
       setIsEditModalOpen(false);
       setEditItem(null);
       updateLocalInventoryItem(updatedItem);
-      showToast('Precio actualizado con éxito', 'success');
+      showToast('Producto actualizado con éxito', 'success');
     } catch (error) {
-      console.error('Error updating price:', error);
-      showToast('Hubo un error al actualizar el precio.', 'error');
+      console.error('Error updating product:', error);
+      showToast('Hubo un error al actualizar el producto.', 'error');
     }
   };
 
@@ -298,9 +292,9 @@ const Inventory = () => {
                           <button
                             onClick={() => handleOpenEdit(product)}
                             className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                            title="Editar Precios de Venta"
+                            title="Editar Producto"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(product.id)}
@@ -408,76 +402,15 @@ const Inventory = () => {
         </div>
       )}
 
-      {/* Edit Prices Modal */}
+      {/* Edit Product Modal */}
       {isEditModalOpen && editItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-teal-50">
-              <h2 className="text-xl font-semibold text-teal-900 flex items-center gap-2">
-                <Edit2 className="w-5 h-5" />
-                Editar Precios de Venta
-              </h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                &times;
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              <div className="bg-gray-50 p-3 rounded-md mb-4">
-                <p className="font-medium text-gray-900">{editItem.name}</p>
-                <div className="text-xs text-gray-400 mt-1">
-                  Nota: Al editar aquí solo cambiará el precio de venta actual. El precio de compra histórico de este producto no se verá afectado.
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (x Mayor)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Bs.</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={editWholesalePrice}
-                    onChange={(e) => setEditWholesalePrice(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (Unidad)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Bs.</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={editSellingPrice}
-                    onChange={(e) => setEditSellingPrice(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700"
-                >
-                  Guardar Precios
-                </button>
-              </div>
-            </form>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-4xl my-8">
+            <ProductForm
+              editingProduct={editItem as any}
+              onAdd={handleUpdateProduct}
+              onCancelEdit={() => setIsEditModalOpen(false)}
+            />
           </div>
         </div>
       )}
