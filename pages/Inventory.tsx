@@ -6,6 +6,7 @@ import { Package, Search, Trash2, Edit2, Plus, RefreshCw, Box } from 'lucide-rea
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const Inventory = () => {
   const { isAdmin } = useAuth();
@@ -23,6 +24,11 @@ const Inventory = () => {
   const [editWholesalePrice, setEditWholesalePrice] = useState<number | ''>('');
   const [editSellingPrice, setEditSellingPrice] = useState<number | ''>('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+
+  // Modal States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // Adjust Stock State
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -95,8 +101,6 @@ const Inventory = () => {
   };
 
   const handleSyncPublicCatalog = async () => {
-    if (!window.confirm('¿Quieres sincronizar el catálogo público ahora? Esto copiará todos los productos actuales a la vitrina web.')) return;
-
     setIsSyncing(true);
     try {
       showToast('Sincronizando el catálogo público, por favor espera...', 'info');
@@ -114,16 +118,23 @@ const Inventory = () => {
     }
   };
 
-  const handleDeleteItem = async (id: string) => {
-    if (window.confirm('¡ATENCIÓN! Estás a punto de borrar este registro del Inventario General por completo.\n\nÚnicamente usa esto si añadiste el producto por error. ¿Estás seguro de continuar?')) {
-      try {
-        await deleteInventoryItem(id);
-        removeLocalInventoryItem(id);
-        showToast('Registro eliminado del inventario', 'info');
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        showToast('Hubo un error al eliminar el registro.', 'error');
-      }
+  const handleDeleteItem = (id: string) => {
+    setItemToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteInventoryItem(itemToDelete);
+      removeLocalInventoryItem(itemToDelete);
+      showToast('Registro eliminado del inventario', 'info');
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      showToast('Hubo un error al eliminar el registro.', 'error');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -149,6 +160,28 @@ const Inventory = () => {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Eliminar Registro"
+        message="¡ATENCIÓN! Estás a punto de borrar este registro del Inventario General por completo. Únicamente usa esto si añadiste el producto por error. ¿Estás seguro de continuar?"
+        confirmText="Eliminar"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={isSyncModalOpen}
+        title="Sincronizar Catálogo"
+        message="¿Quieres sincronizar el catálogo público ahora? Esto copiará todos los productos actuales a la vitrina web y puede tomar unos segundos."
+        confirmText="Sincronizar"
+        isDestructive={false}
+        onConfirm={handleSyncPublicCatalog}
+        onCancel={() => setIsSyncModalOpen(false)}
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Package className="w-6 h-6 text-teal-600" />
@@ -158,7 +191,7 @@ const Inventory = () => {
           {isAdmin && (
             <>
               <button
-                onClick={handleSyncPublicCatalog}
+                onClick={() => setIsSyncModalOpen(true)}
                 disabled={isSyncing}
                 className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto"
                 title="Sincronizar todos los productos a la Vitrina Pública"

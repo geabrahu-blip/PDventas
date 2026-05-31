@@ -579,7 +579,8 @@ export const processBulkTransfer = async (
 export const getSales = async (): Promise<Sale[]> => {
   const q = query(collection(db, 'sales'));
   const querySnapshot = await getDocs(q);
-  const sales = querySnapshot.docs.map(doc => doc.data() as Sale);
+  // Fix: explicitly inject the document ID into the returned object
+  const sales = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Sale));
   return sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
@@ -588,6 +589,52 @@ export const addSale = async (sale: Omit<Sale, 'id'>): Promise<Sale> => {
   const newSale: Sale = { ...sale, id };
   await setDoc(doc(db, 'sales', id), newSale);
   return newSale;
+};
+
+export const cancelSale = async (saleId: string, items: { productId: string, name: string, quantity: number }[]): Promise<void> => {
+  const saleRef = doc(db, 'sales', saleId);
+  const now = new Date();
+
+  await runTransaction(db, async (transaction) => {
+    // 1. Verify all items exist and prepare writes (reads must be done first)
+    const inventoryDocs = [];
+    for (const item of items) {
+      const inventoryRef = doc(db, 'inventory', item.productId);
+      const inventoryDoc = await transaction.get(inventoryRef);
+
+      if (!inventoryDoc.exists()) {
+        throw new Error(`Producto ${item.name} no encontrado en el inventario para poder hacer la devolución.`);
+      }
+
+      const currentUnits = inventoryDoc.data().units || 0;
+
+      inventoryDocs.push({
+        ref: inventoryRef,
+        item: item,
+        newUnits: currentUnits + item.quantity // Revert the sale by adding back the stock
+      });
+    }
+
+    // 2. Perform all writes
+    for (const docData of inventoryDocs) {
+      // Add stock back
+      transaction.update(docData.ref, { units: docData.newUnits });
+
+      // Log ENTRADA to Kardex
+      const kardexRef = doc(db, 'kardex_logs', generateId());
+      transaction.set(kardexRef, {
+        productId: docData.item.productId,
+        quantity: docData.item.quantity, // Positive number
+        date: now.toISOString().split('T')[0],
+        reason: 'Anulación de Venta',
+        timestamp: now.getTime(),
+        type: 'ENTRADA'
+      });
+    }
+
+    // 3. Delete the Sale record
+    transaction.delete(saleRef);
+  });
 };
 
 export const deleteSale = async (id: string): Promise<void> => {
