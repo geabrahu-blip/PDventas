@@ -1,57 +1,70 @@
-import { useState, useEffect } from 'react';
-import { Sale, Store } from '../types';
-import { getSales, getStores, deleteSale } from '../services/db';
-import { FileText, Calendar, Filter, DollarSign, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Sale } from '../types';
+import { getSales, cancelSale } from '../services/db';
+import { FileText, Calendar, DollarSign, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const SalesReport = () => {
   const { isAdmin } = useAuth();
+  const { showToast } = useToast();
   const [sales, setSales] = useState<Sale[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
+
   // Filters
-  const [filterStore, setFilterStore] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [sales, filterStore, filterDate]);
-
-  const loadData = async () => {
-    const [salesData, storesData] = await Promise.all([getSales(), getStores()]);
-    setSales(salesData);
-    setStores(storesData);
-  };
-
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let result = sales;
-
-    if (filterStore !== 'all') {
-      result = result.filter(sale => sale.storeId === filterStore);
-    }
 
     if (filterDate) {
       result = result.filter(sale => sale.date.startsWith(filterDate));
     }
 
     setFilteredSales(result);
+  }, [sales, filterDate]);
+
+  const loadData = useCallback(async () => {
+    try {
+      const salesData = await getSales();
+      setSales(salesData);
+    } catch (error) {
+      console.error('Error loading sales:', error);
+      showToast('Error al cargar ventas', 'error');
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  const handleDeleteClick = (sale: Sale) => {
+    setSaleToDelete(sale);
+    setIsDeleteModalOpen(true);
   };
 
-  const getStoreName = (storeId: string) => {
-    if (storeId === 'bodega') return 'Bodega Central';
-    const store = stores.find(s => s.id === storeId);
-    return store ? store.name : 'Desconocida';
-  };
+  const confirmDelete = async () => {
+    if (!saleToDelete) return;
 
-  const handleDelete = async (saleId: string) => {
-    if (confirm('¿Estás seguro de eliminar esta venta? Se regresará el stock a la sucursal correspondiente.')) {
-      await deleteSale(saleId);
+    try {
+      showToast('Anulando venta...', 'info');
+      await cancelSale(saleToDelete.id, saleToDelete.items);
+      showToast('Venta anulada correctamente. Stock devuelto.', 'success');
       loadData();
+    } catch (error) {
+      console.error('Error canceling sale:', error);
+      showToast('Hubo un error al anular la venta', 'error');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSaleToDelete(null);
     }
   };
 
@@ -118,6 +131,18 @@ const SalesReport = () => {
         </div>
       </div>
 
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Anular Venta"
+        message="¿Estás seguro de anular esta venta? Se eliminará el registro financiero y se devolverá el stock al inventario, registrándose como una ENTRADA en el Kárdex."
+        confirmText="Anular Venta"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setSaleToDelete(null);
+        }}
+      />
+
       {/* Sales Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -140,7 +165,7 @@ const SalesReport = () => {
                     {new Date(sale.date).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 font-medium text-gray-900">
-                    {getStoreName(sale.storeId)}
+                    Bodega Central
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     {sale.clientName}
@@ -165,9 +190,9 @@ const SalesReport = () => {
                   {isAdmin && (
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => handleDelete(sale.id)}
+                        onClick={() => handleDeleteClick(sale)}
                         className="p-1 text-gray-400 hover:text-red-600 rounded-full transition-colors"
-                        title="Eliminar venta y devolver stock"
+                        title="Anular venta y devolver stock"
                       >
                         <Trash2 className="w-5 h-5 mx-auto" />
                       </button>
