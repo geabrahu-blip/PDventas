@@ -5,7 +5,7 @@ import { getInventoryItems } from '../services/db';
 import imageCompression from 'browser-image-compression';
 
 interface ProductFormProps {
-  onAdd: (product: Omit<Product, 'id'>, updatePricesAllStores?: boolean) => void;
+  onAdd: (product: Omit<Product, 'id'>) => void;
   editingProduct?: Product;
   onCancelEdit?: () => void;
 }
@@ -23,7 +23,6 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [capacity, setCapacity] = useState('');
   const [expirationDate, setExpirationDate] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [updatePricesAllStores, setUpdatePricesAllStores] = useState(false);
 
   // Autocomplete State
   const [existingBrands, setExistingBrands] = useState<string[]>([]);
@@ -85,7 +84,6 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setUnits(editingProduct.units);
       setWholesalePrice(editingProduct.wholesalePrice);
       setSellingPrice(editingProduct.sellingPrice);
-      setUpdatePricesAllStores(false);
     } else {
       resetForm();
     }
@@ -104,7 +102,6 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setUnits('');
     setWholesalePrice('');
     setSellingPrice('');
-    setUpdatePricesAllStores(false);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,9 +153,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       wholesalePrice: Number(wholesalePrice),
       sellingPrice: Number(sellingPrice),
       totalPrice,
-    }, updatePricesAllStores);
+    });
 
-    resetForm();
+    if (!editingProduct) {
+      resetForm();
+    }
   };
 
   const currentTotal = priceBs !== '' && units !== ''
@@ -171,7 +170,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   ).slice(0, 5); // Limit to top 5 results
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-6 relative">
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4">
         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           {editingProduct ? (
@@ -181,7 +180,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             </>
           ) : (
             <>
-              <Plus className="h-5 w-5 text-primary-600" />
+              <Plus className="h-5 w-5 text-teal-600" />
               Agregar Nuevo Producto
             </>
           )}
@@ -205,7 +204,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
             />
           </div>
         </div>
@@ -218,7 +217,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             type="text"
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
-            className="w-full px-3 py-2 border border-blue-100 bg-blue-50/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-blue-100 bg-blue-50/50 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Ej. CERA-100"
           />
         </div>
@@ -236,7 +235,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               if (!editingProduct) setShowProductSearch(true);
             }}
             onFocus={() => { if (!editingProduct) setShowProductSearch(true); }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Busca por nombre o código..."
           />
           {!editingProduct && showProductSearch && name && (
@@ -281,7 +280,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             list="brands-list"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Ej. CeraVe, The Ordinary, La Roche-Posay"
           />
           <datalist id="brands-list">
@@ -298,7 +297,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Ej. Suero, Crema Hidratante, Protector Solar, Limpiador"
           />
         </div>
@@ -309,7 +308,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             id="prod-gender"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             <option value="">Seleccionar...</option>
             <option value="Todo tipo de piel">Todo tipo de piel</option>
@@ -327,7 +326,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             type="text"
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Ej. 30ml, 50ml"
           />
         </div>
@@ -340,7 +339,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               type="date"
               value={expirationDate}
               onChange={(e) => setExpirationDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
             />
           </div>
         </div>
@@ -355,7 +354,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               required
               value={units}
               onChange={(e) => setUnits(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
@@ -368,7 +367,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               required
               value={priceBs}
               onChange={(e) => setPriceBs(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
@@ -381,7 +380,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               required
               value={wholesalePrice}
               onChange={(e) => setWholesalePrice(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
@@ -394,34 +393,10 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               required
               value={sellingPrice}
               onChange={(e) => setSellingPrice(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
         </div>
-
-        {editingProduct && (
-          <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2 mb-2 p-3 bg-teal-50 rounded-lg border border-teal-100 flex items-start gap-3">
-            <div className="flex items-center h-5">
-              <input
-                id="update-prices-all-stores"
-                type="checkbox"
-                checked={updatePricesAllStores}
-                onChange={(e) => setUpdatePricesAllStores(e.target.checked)}
-                className="w-4 h-4 text-teal-600 bg-white border-gray-300 rounded focus:ring-teal-500"
-              />
-            </div>
-            <div className="text-sm">
-              <label htmlFor="update-prices-all-stores" className="font-medium text-teal-900 cursor-pointer">
-                Actualizar precios en todas las sucursales
-              </label>
-              <p className="text-teal-700 mt-1">
-                Si marcas esto, los nuevos precios de venta reemplazarán los precios en todas las tiendas donde haya stock de este producto.
-                Si lo dejas desmarcado, los precios solo se actualizarán en Bodega y se respetarán los precios personalizados de otras tiendas.
-                (Nota: Las etiquetas y fotos siempre se actualizarán en todas las tiendas).
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -442,7 +417,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           )}
           <button
             type="submit"
-            className={`px-6 py-2 rounded-lg font-medium transition-colors text-white ${editingProduct ? 'bg-teal-600 hover:bg-teal-700' : 'bg-primary-600 hover:bg-primary-700'}`}
+            className="px-6 py-2 rounded-lg font-medium transition-colors text-white bg-teal-600 hover:bg-teal-700"
           >
             {editingProduct ? 'Actualizar Producto' : 'Guardar Producto'}
           </button>
