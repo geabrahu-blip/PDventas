@@ -19,6 +19,7 @@ const POS = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientName, setClientName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR'>('Cash');
+  const [globalDiscount, setGlobalDiscount] = useState<number | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<ReceiptData | null>(null);
 
@@ -52,9 +53,14 @@ const POS = () => {
   }, [inventory, searchTerm]);
 
   // Derived calculations
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.product.sellingPrice * item.quantity), 0);
   }, [cart]);
+
+  const total = useMemo(() => {
+    const discountAmount = Number(globalDiscount) || 0;
+    return Math.max(0, subtotal - discountAmount);
+  }, [subtotal, globalDiscount]);
 
   // Cart operations
   const addToCart = (product: InventoryItem) => {
@@ -115,7 +121,9 @@ const POS = () => {
       await processPOSSale(
         clientName.trim(), // Empty string is handled in the DB layer (defaults to 'Cliente Ocasional')
         saleItems,
+        subtotal,
         total,
+        Number(globalDiscount) || 0,
         paymentMethod
       );
 
@@ -128,7 +136,9 @@ const POS = () => {
           quantity: item.quantity,
           subtotal: item.product.sellingPrice * item.quantity
         })),
+        subtotal,
         total,
+        globalDiscount: Number(globalDiscount) || 0,
         clientName,
         paymentMethod,
         date: new Date()
@@ -137,6 +147,8 @@ const POS = () => {
       // Reset POS state
       setCart([]);
       setClientName('');
+      setGlobalDiscount('');
+      setPaymentMethod('Cash');
       setSearchTerm('');
 
       // Refresh global inventory to reflect new stock
@@ -209,16 +221,39 @@ const POS = () => {
                         {/* Stock Badge */}
                         <div className={`absolute top-3 right-3 text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-sm backdrop-blur-sm border
                           ${isLowStock
-                            ? 'bg-rose-50/90 text-rose-600 border-rose-100'
+                            ? 'bg-orange-50/90 text-orange-600 border-orange-100'
                             : 'bg-white/90 text-slate-600 border-slate-200'}
                         `}>
                           {product.units} {product.units === 1 ? 'ud' : 'uds'}
                         </div>
                     </div>
                     <div className="p-4 flex flex-col flex-1 border-t border-slate-50/50">
-                      <h3 className="text-sm font-medium text-slate-800 leading-snug line-clamp-2 mb-2 group-hover:text-cyan-600 transition-colors" title={product.name}>
+                      <h3 className="text-sm font-medium text-slate-800 leading-snug line-clamp-2 mb-1.5 group-hover:text-cyan-600 transition-colors" title={product.name}>
                         {product.name}
                       </h3>
+
+                      <div className="flex flex-col gap-1.5 mb-3 mt-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {product.category && (
+                            <span className="bg-slate-100 text-slate-600 text-[11px] font-medium px-2 py-0.5 rounded-md truncate max-w-[100px]">
+                              {product.category}
+                            </span>
+                          )}
+                          {product.capacity && (
+                            <span className="bg-slate-100 text-slate-600 text-[11px] font-medium px-2 py-0.5 rounded-md whitespace-nowrap">
+                              {product.capacity}
+                            </span>
+                          )}
+                        </div>
+                        {product.gender && (
+                          <div className="flex">
+                            <span className="bg-cyan-50 text-cyan-700 text-[11px] font-medium px-2 py-0.5 rounded-md border border-cyan-100 truncate max-w-full">
+                              {product.gender}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="mt-auto flex items-end justify-between">
                         <span className="text-base font-semibold text-slate-900">Bs. {product.sellingPrice}</span>
                       </div>
@@ -334,9 +369,29 @@ const POS = () => {
             </div>
           </div>
 
-          <div className="pt-2 flex justify-between items-end">
-            <span className="text-slate-500 font-medium">Total</span>
-            <span className="text-3xl font-bold text-slate-900 tracking-tight">Bs. {total.toFixed(2)}</span>
+          <div className="pt-4 space-y-3">
+            <div className="flex justify-between items-center text-slate-500">
+              <span className="font-medium">Subtotal</span>
+              <span className="font-semibold text-slate-700">Bs. {subtotal.toFixed(2)}</span>
+            </div>
+
+            <div className="flex justify-between items-center text-slate-500">
+              <span className="font-medium">Descuento Global (Bs):</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={globalDiscount}
+                onChange={(e) => setGlobalDiscount(e.target.value ? Number(e.target.value) : '')}
+                className="w-24 text-right px-2 py-1 bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-slate-700 font-semibold"
+              />
+            </div>
+
+            <div className="flex justify-between items-end pt-2 border-t border-slate-100">
+              <span className="text-slate-500 font-medium">Total a Pagar</span>
+              <span className="text-3xl font-bold text-slate-900 tracking-tight">Bs. {total.toFixed(2)}</span>
+            </div>
           </div>
 
           <button
