@@ -22,6 +22,7 @@ const POS = () => {
   const [globalDiscount, setGlobalDiscount] = useState<number | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<ReceiptData | null>(null);
+  const [activeTab, setActiveTab] = useState<'catalog' | 'cart'>('catalog');
 
   useEffect(() => {
     const handleAfterPrint = () => {
@@ -53,6 +54,10 @@ const POS = () => {
   }, [inventory, searchTerm]);
 
   // Derived calculations
+  const totalItems = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart]);
+
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.product.sellingPrice * item.quantity), 0);
   }, [cart]);
@@ -71,12 +76,14 @@ const POS = () => {
           showToast('No hay suficiente stock disponible', 'error');
           return prevCart;
         }
+        showToast('Producto sumado al carrito', 'success');
         return prevCart.map(item =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
+      showToast('Producto agregado al carrito', 'success');
       return [...prevCart, { product, quantity: 1 }];
     });
   };
@@ -166,13 +173,38 @@ const POS = () => {
     <>
     <Receipt data={lastSaleData} />
 
-    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6 print:hidden bg-slate-50 p-2">
+    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 print:hidden bg-slate-50 lg:p-2">
+
+      {/* Mobile Tabs */}
+      <div className="lg:hidden flex bg-white border-b border-slate-200 sticky top-14 z-40 shrink-0">
+        <button
+          onClick={() => setActiveTab('catalog')}
+          className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'catalog' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Productos
+        </button>
+        <button
+          onClick={() => setActiveTab('cart')}
+          className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center justify-center gap-2 ${
+            activeTab === 'cart' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Ver Carrito
+          {totalItems > 0 && (
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'cart' ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-600'}`}>
+              {totalItems}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Left Panel: Catalog */}
-      <div className="w-full lg:w-2/3 flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className={`${activeTab === 'catalog' ? 'flex' : 'hidden'} lg:flex w-full lg:w-2/3 flex-col h-full bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200 overflow-hidden`}>
         {/* Header & Search */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-4">
-          <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+        <div className="p-4 lg:p-5 border-b border-slate-100 flex items-center justify-between gap-4 shrink-0">
+          <h2 className="hidden lg:flex text-xl font-semibold text-slate-800 items-center gap-2">
             <Sparkles className="w-6 h-6 text-cyan-500" />
             Catálogo
           </h2>
@@ -267,8 +299,8 @@ const POS = () => {
       </div>
 
       {/* Right Panel: Cart & Checkout */}
-      <div className="w-full lg:w-1/3 flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div className={`${activeTab === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/3 flex-col h-full bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200 overflow-hidden pb-28 lg:pb-0`}>
+        <div className="hidden lg:flex p-5 border-b border-slate-100 items-center justify-between shrink-0">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-cyan-500" />
             Venta Actual
