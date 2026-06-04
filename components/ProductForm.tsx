@@ -170,7 +170,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   ).slice(0, 5); // Limit to top 5 results
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 relative">
+    <form onSubmit={handleSubmit} className="bg-white rounded-none md:rounded-2xl border-0 md:border border-gray-200 p-4 md:p-6 space-y-6 relative min-h-screen md:min-h-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4">
         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           {editingProduct ? (
@@ -344,7 +344,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-gray-100 pt-4">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-gray-100 pt-4">
           <div className="col-span-1">
             <label htmlFor="prod-units" className="block text-sm font-medium text-gray-700 mb-1">Unidades</label>
             <input

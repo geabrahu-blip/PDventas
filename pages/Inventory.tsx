@@ -197,19 +197,22 @@ const Inventory = () => {
           )}
           {isAdmin && (
             <button
-              onClick={() => setIsAddProductOpen(!isAddProductOpen)}
-              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 flex items-center justify-center gap-2 w-full sm:w-auto"
+              onClick={() => setIsAddProductOpen(true)}
+              className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 flex items-center justify-center gap-2 w-full sm:w-auto transition-colors"
             >
               <Plus className="w-5 h-5" />
-              {isAddProductOpen ? 'Cerrar Formulario' : 'Añadir Producto'}
+              Añadir Producto
             </button>
           )}
         </div>
       </div>
 
+      {/* Añadir Producto Modal (Fullscreen on mobile, inline/modal on desktop depending on preference, here we make it modal-like for consistency) */}
       {isAddProductOpen && isAdmin && (
-        <div className="mb-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center md:p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full h-full md:h-auto md:max-w-4xl md:my-8 relative">
           <ProductForm
+            onCancelEdit={() => setIsAddProductOpen(false)}
             onAdd={async (product) => {
               try {
                 await addProduct(product as any); // Type assertion needed due to Product vs Omit<Product, 'id'> matching
@@ -222,6 +225,7 @@ const Inventory = () => {
               }
             }}
           />
+          </div>
         </div>
       )}
 
@@ -238,7 +242,8 @@ const Inventory = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
@@ -319,6 +324,70 @@ const Inventory = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Grid View */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {filteredProducts.map((product) => (
+          <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3">
+            <div className="flex gap-3">
+              <div className="h-16 w-16 shrink-0 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-100">
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Package className="w-8 h-8 text-gray-300" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-2">
+                  <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${product.units < 5 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
+                    {product.units} ud.
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  {product.category && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600">{product.category}</span>}
+                  {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600 font-medium">{product.capacity}</span>}
+                  {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 text-[10px]">{product.gender}</span>}
+                </div>
+
+                <div className="mt-2 text-sm font-bold text-slate-800">
+                  Bs. {(product.sellingPrice || 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {isAdmin && (
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                <button
+                  onClick={() => handleOpenAdjust(product)}
+                  className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Box className="w-4 h-4" /> Ajustar
+                </button>
+                <button
+                  onClick={() => handleOpenEdit(product)}
+                  className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Edit3 className="w-4 h-4" /> Editar
+                </button>
+                <button
+                  onClick={() => handleDeleteItem(product.id)}
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        {filteredProducts.length === 0 && (
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
+            No se encontraron productos en el inventario.
+          </div>
+        )}
       </div>
 
       {/* Adjust Stock Modal */}
@@ -404,8 +473,8 @@ const Inventory = () => {
 
       {/* Edit Product Modal */}
       {isEditModalOpen && editItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-4xl my-8">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center md:p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full h-full md:h-auto md:max-w-4xl md:my-8">
             <ProductForm
               editingProduct={editItem as any}
               onAdd={handleUpdateProduct}

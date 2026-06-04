@@ -102,16 +102,16 @@ const SalesReport = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-teal-500">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-teal-500 flex flex-col justify-center">
           <p className="text-sm font-medium text-gray-500">Total Ingresos (Filtro Actual)</p>
-          <p className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-500" /> Bs. {(totalSalesAmount || 0).toFixed(2)}
+          <p className="text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
+            <DollarSign className="w-5 h-5 text-teal-500" /> Bs. {(totalSalesAmount || 0).toFixed(2)}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-cyan-500 flex flex-col justify-center">
           <p className="text-sm font-medium text-gray-500">Ventas Realizadas</p>
-          <p className="text-2xl font-bold text-gray-900">{filteredSales.length}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{filteredSales.length}</p>
         </div>
       </div>
 
