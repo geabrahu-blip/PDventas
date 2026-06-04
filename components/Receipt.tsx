@@ -3,7 +3,9 @@ import { InventoryItem } from '../types';
 
 export interface ReceiptData {
   items: { product: InventoryItem; quantity: number; subtotal: number }[];
+  subtotal: number;
   total: number;
+  globalDiscount: number;
   clientName: string;
   paymentMethod: 'Cash' | 'QR';
   date: Date;
@@ -65,6 +67,18 @@ const Receipt: React.FC<ReceiptProps> = ({ data }) => {
       </table>
 
       {/* Totals */}
+      {data.globalDiscount > 0 && (
+        <>
+          <div className="flex justify-between items-center mb-1 text-sm">
+            <span>Subtotal:</span>
+            <span>Bs. {data.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2 text-sm">
+            <span>Descuento Global:</span>
+            <span>- Bs. {data.globalDiscount.toFixed(2)}</span>
+          </div>
+        </>
+      )}
       <div className="flex justify-between items-center mb-2">
         <span className="font-bold text-sm">TOTAL:</span>
         <span className="font-black text-lg">Bs. {data.total.toFixed(2)}</span>

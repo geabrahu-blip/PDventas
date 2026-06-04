@@ -104,8 +104,10 @@ export interface Sale {
   storeId: string;
   clientName: string;
   items: SaleItem[];
+  subtotal: number;
   total: number; // subtotal minus discount
   globalDiscount?: number; // amount of discount applied to the total
+  discount?: number; // Alias for globalDiscount used for legacy compat or strict mapping
   paymentMethod: 'Cash' | 'QR';
   date: string;
 }

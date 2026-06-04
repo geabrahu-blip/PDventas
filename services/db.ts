@@ -24,7 +24,9 @@ const generateId = () => doc(collection(db, 'dummy')).id;
 export const processPOSSale = async (
   clientName: string,
   items: { productId: string, name: string, quantity: number, price: number, subtotal: number }[],
+  subtotal: number,
   total: number,
+  globalDiscount: number,
   paymentMethod: 'Cash' | 'QR'
 ): Promise<void> => {
   const saleId = generateId();
@@ -76,7 +78,10 @@ export const processPOSSale = async (
       storeId: 'bodega', // Hardcoded single store
       clientName: clientName || 'Cliente Ocasional',
       items: items,
+      subtotal: subtotal,
       total: total,
+      discount: globalDiscount, // Using alias as requested
+      globalDiscount: globalDiscount,
       paymentMethod: paymentMethod,
       date: now.toISOString(),
       timestamp: now.getTime() // Useful for queries
