@@ -3,7 +3,7 @@ import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
 import { processPOSSale } from '../services/db';
 import { InventoryItem } from '../types';
-import { Search, ShoppingCart, Plus, Minus, X, CreditCard, Banknote, Package, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, X, CreditCard, Banknote, Package, Sparkles, Trash2 } from 'lucide-react';
 import Receipt, { ReceiptData } from '../components/Receipt';
 
 interface CartItem {
