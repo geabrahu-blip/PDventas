@@ -311,7 +311,7 @@ const POS = () => {
         </div>
 
         {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto max-h-[40vh] border-b border-slate-100 mb-2 p-3 lg:p-5 space-y-3 bg-slate-50/30">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
@@ -321,22 +321,21 @@ const POS = () => {
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.product.id} className="flex flex-col bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:border-slate-200 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-sm font-medium text-slate-800 leading-snug pr-4">{item.product.name}</span>
-                  <button onClick={() => removeFromCart(item.product.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded-full">
-                    <X className="w-4 h-4" />
-                  </button>
+              <div key={item.product.id} className="flex flex-row items-center bg-white border border-slate-100 p-3 rounded-2xl shadow-sm hover:border-slate-200 transition-colors gap-3">
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-slate-800 leading-snug line-clamp-2">{item.product.name}</h4>
+                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">Bs. {item.product.sellingPrice} c/u</div>
                 </div>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1">
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5">
                     <button
                       onClick={() => updateQuantity(item.product.id, -1)}
                       className="p-1.5 text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-8 text-center text-sm font-semibold text-slate-800">{item.quantity}</span>
+                    <span className="w-6 text-center text-sm font-semibold text-slate-800">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.product.id, 1)}
                       disabled={item.quantity >= item.product.units}
@@ -345,10 +344,14 @@ const POS = () => {
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[11px] text-slate-500 font-medium">Bs. {item.product.sellingPrice} c/u</div>
-                    <div className="text-sm font-bold text-slate-900 mt-0.5">Bs. {item.quantity * item.product.sellingPrice}</div>
+
+                  <div className="text-right w-16">
+                    <div className="text-sm font-bold text-slate-900">Bs. {item.quantity * item.product.sellingPrice}</div>
                   </div>
+
+                  <button onClick={() => removeFromCart(item.product.id)} className="text-red-400 hover:text-red-600 transition-colors p-1.5 hover:bg-red-50 rounded-lg">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))
@@ -356,45 +359,45 @@ const POS = () => {
         </div>
 
         {/* Checkout Section */}
-        <div className="p-5 border-t border-slate-100 bg-white space-y-5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10">
+        <div className="p-3 lg:p-5 bg-white space-y-3 lg:space-y-5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10">
 
-          <div className="space-y-4">
+          <div className="space-y-3 lg:space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Cliente (Opcional)</label>
+              <label className="block text-[10px] lg:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 lg:mb-2">Cliente (Opcional)</label>
               <input
                 type="text"
                 placeholder="Cliente Ocasional"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500 transition-colors bg-slate-50 focus:bg-white"
+                className="w-full px-3 py-2 lg:px-4 lg:py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500 transition-colors bg-slate-50 focus:bg-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Método de Pago</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="block text-[10px] lg:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 lg:mb-2">Método de Pago</label>
+              <div className="grid grid-cols-2 gap-2 lg:gap-3">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('Cash')}
-                  className={`flex flex-col items-center justify-center gap-2 py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-2 py-2 lg:py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
                     paymentMethod === 'Cash'
                       ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
                       : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  <Banknote className={`w-6 h-6 ${paymentMethod === 'Cash' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                  <Banknote className={`w-4 h-4 lg:w-6 lg:h-6 ${paymentMethod === 'Cash' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   <span>Efectivo</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('QR')}
-                  className={`flex flex-col items-center justify-center gap-2 py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-2 py-2 lg:py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
                     paymentMethod === 'QR'
                       ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
                       : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  <CreditCard className={`w-6 h-6 ${paymentMethod === 'QR' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                  <CreditCard className={`w-4 h-4 lg:w-6 lg:h-6 ${paymentMethod === 'QR' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   <span>QR / Transf.</span>
                 </button>
               </div>
