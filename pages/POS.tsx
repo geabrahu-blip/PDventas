@@ -3,7 +3,7 @@ import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
 import { processPOSSale } from '../services/db';
 import { InventoryItem } from '../types';
-import { Search, ShoppingCart, Plus, Minus, X, CreditCard, Banknote, Package, Sparkles, Trash2 } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Package, Sparkles, Trash2 } from 'lucide-react';
 import Receipt, { ReceiptData } from '../components/Receipt';
 
 interface CartItem {
@@ -34,12 +34,6 @@ const POS = () => {
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
 
-  useEffect(() => {
-    // Automatically trigger print dialog when a new sale is completed
-    if (lastSaleData) {
-      window.print();
-    }
-  }, [lastSaleData]);
 
   // Filter products for the catalog
   const filteredProducts = useMemo(() => {
@@ -151,6 +145,11 @@ const POS = () => {
         date: new Date()
       });
 
+      // Delay de sincronización para la tiquetera:
+      setTimeout(() => {
+        window.print();
+      }, 300);
+
       // Reset POS state
       setCart([]);
       setClientName('');
@@ -171,7 +170,9 @@ const POS = () => {
 
   return (
     <>
-    <Receipt data={lastSaleData} />
+    <div className="hidden print:block">
+      <Receipt data={lastSaleData} />
+    </div>
 
     <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 print:hidden bg-slate-50 lg:p-2">
 
