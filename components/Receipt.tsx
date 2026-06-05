@@ -20,6 +20,27 @@ const Receipt: React.FC<ReceiptProps> = ({ data }) => {
 
   return (
     <>
+      <style>
+        {`
+          @media print {
+            html, body, #root {
+              height: auto !important;
+              min-height: auto !important;
+              overflow: visible !important;
+              background: white !important;
+            }
+            @page {
+              size: 58mm auto;
+              margin: 0mm !important;
+            }
+            #receipt-print-zone {
+              display: block !important;
+              width: 52mm !important; /* Ancho imprimible real */
+              color: black !important;
+            }
+          }
+        `}
+      </style>
       <div id="receipt-print-zone" className="hidden print:block print:absolute print:top-0 print:left-0 print:w-[52mm] print:text-black print:bg-white print:m-0 font-mono text-[12px] leading-tight mx-auto p-2">
         {/* Header */}
         <div className="text-center mb-2 border-b border-black border-dashed pb-2">
