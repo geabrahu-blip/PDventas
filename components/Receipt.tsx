@@ -20,34 +20,7 @@ const Receipt: React.FC<ReceiptProps> = ({ data }) => {
 
   return (
     <>
-      <style type="text/css">
-        {`
-          @media print {
-            body * {
-              display: none !important;
-            }
-            #receipt-print-zone, #receipt-print-zone * {
-              display: block !important;
-              visibility: visible !important;
-            }
-            #receipt-print-zone {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 58mm;
-              margin: 0;
-              padding: 0;
-              background-color: white;
-              color: black;
-            }
-            @page {
-              size: 58mm auto;
-              margin: 0;
-            }
-          }
-        `}
-      </style>
-      <div id="receipt-print-zone" className="hidden print:block font-mono text-[12px] leading-tight w-[48mm] mx-auto p-2">
+      <div id="receipt-print-zone" className="hidden print:block print:absolute print:top-0 print:left-0 print:w-[52mm] print:text-black print:bg-white print:m-0 font-mono text-[12px] leading-tight mx-auto p-2">
         {/* Header */}
         <div className="text-center mb-2 border-b border-black border-dashed pb-2">
           <h1 className="text-sm font-bold tracking-widest">PIEL DIVINA</h1>

@@ -18,3 +18,16 @@ body {
   background-color: #f3f4f6;
   color: #111827;
 }
+
+@media print {
+  html, body, #root {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  @page {
+    size: 58mm auto;
+    margin: 0mm !important;
+  }
+}

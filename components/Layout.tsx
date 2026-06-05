@@ -22,7 +22,7 @@ export default function Layout() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col print:bg-white pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-50 flex flex-col print:bg-white pb-16 md:pb-0 print:pb-0">
       {/* Desktop Header */}
       <header className="hidden md:block bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
