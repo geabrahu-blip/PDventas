@@ -4,7 +4,7 @@ import { getPublicInventoryItems, getAllPublicInventoryItems, PaginatedResult } 
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 const WHATSAPP_NUMBER = "59169236994";
-const TABS = ['Todos', 'Varón', 'Mujer', 'Unisex'];
+const TABS = ['Todos', 'Varón', 'Mujer', 'Unisex', 'Todo tipo de piel', 'Piel Grasa', 'Piel Seca', 'Piel Mixta', 'Piel Sensible', 'Piel con manchas'];
 const MAPS_LINK = "https://maps.app.goo.gl/t2jfDuZRuqwrjD9X8?g_st=aw";
 
 // Cart Item type
