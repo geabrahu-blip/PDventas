@@ -24,6 +24,8 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [expirationDate, setExpirationDate] = useState('');
   const [barcode, setBarcode] = useState('');
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Autocomplete State
   const [existingBrands, setExistingBrands] = useState<string[]>([]);
   const [globalProducts, setGlobalProducts] = useState<InventoryItem[]>([]);
@@ -136,27 +138,32 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     e.preventDefault();
     if (!name || priceBs === '' || units === '' || wholesalePrice === '' || sellingPrice === '') return;
 
-    const totalPrice = Number(priceBs) * Number(units);
+    setIsSubmitting(true);
+    try {
+      const totalPrice = Number(priceBs) * Number(units);
 
-    // We await onAdd here so if there's an error we don't clear the form
-    await onAdd({
-      name,
-      brand,
-      category,
-      gender,
-      capacity,
-      expirationDate,
-      barcode,
-      image,
-      priceBs: Number(priceBs),
-      units: Number(units),
-      wholesalePrice: Number(wholesalePrice),
-      sellingPrice: Number(sellingPrice),
-      totalPrice,
-    });
+      // We await onAdd here so if there's an error we don't clear the form
+      await onAdd({
+        name,
+        brand,
+        category,
+        gender,
+        capacity,
+        expirationDate,
+        barcode,
+        image,
+        priceBs: Number(priceBs),
+        units: Number(units),
+        wholesalePrice: Number(wholesalePrice),
+        sellingPrice: Number(sellingPrice),
+        totalPrice,
+      });
 
-    if (!editingProduct) {
-      resetForm();
+      if (!editingProduct) {
+        resetForm();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -316,6 +323,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             <option value="Piel Seca">Piel Seca</option>
             <option value="Piel Mixta">Piel Mixta</option>
             <option value="Piel Sensible">Piel Sensible</option>
+            <option value="Piel con manchas">Piel con manchas</option>
           </select>
         </div>
 
@@ -410,16 +418,20 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             <button
               type="button"
               onClick={onCancelEdit}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="w-4 h-4" /> Cancelar
             </button>
           )}
           <button
             type="submit"
-            className="px-6 py-2 rounded-lg font-medium transition-colors text-white bg-teal-600 hover:bg-teal-700"
+            disabled={isSubmitting}
+            className="px-6 py-2 rounded-lg font-medium transition-colors text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {editingProduct ? 'Actualizar Producto' : 'Guardar Producto'}
+            {isSubmitting
+              ? (editingProduct ? 'Actualizando...' : 'Guardando...')
+              : (editingProduct ? 'Actualizar Producto' : 'Guardar Producto')}
           </button>
         </div>
       </div>
