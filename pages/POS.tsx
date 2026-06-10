@@ -170,11 +170,9 @@ const POS = () => {
 
   return (
     <>
-    <div className="hidden print:block">
       <Receipt data={lastSaleData} />
-    </div>
 
-    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 bg-slate-50 lg:p-2">
+      <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 bg-slate-50 lg:p-2">
 
       {/* Mobile Tabs */}
       <div className="lg:hidden flex bg-white border-b border-slate-200 sticky top-14 z-40 shrink-0">

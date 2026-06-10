@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { InventoryItem } from '../types';
 
 export interface ReceiptData {
@@ -16,26 +17,41 @@ interface ReceiptProps {
 }
 
 const Receipt: React.FC<ReceiptProps> = ({ data }) => {
-  if (!data) return null;
+  const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
 
-  return (
+  useEffect(() => {
+    const node = document.createElement('div');
+    node.id = 'printable-receipt-portal';
+    // Ensure it's hidden on screen, but visible when printing overrides happen
+    node.className = 'hidden print:block';
+    document.body.appendChild(node);
+    setPortalNode(node);
+
+    return () => {
+      if (document.body.contains(node)) {
+        document.body.removeChild(node);
+      }
+    };
+  }, []);
+
+  if (!data || !portalNode) return null;
+
+  return createPortal(
     <>
       <style>
         {`
 @media print {
-  body * {
-    visibility: hidden;
+  /* Ocultamos absolutamente TODA la app de React */
+  #root {
+    display: none !important;
   }
-  #receipt-print-zone, #receipt-print-zone * {
-    visibility: visible;
-  }
-  #receipt-print-zone {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 58mm;
-    margin: 0;
-    padding: 0;
+  /* Hacemos visible ÚNICAMENTE el portal del ticket */
+  #printable-receipt-portal {
+    display: block !important;
+    width: 58mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white;
   }
   @page {
     size: 58mm auto;
@@ -44,7 +60,7 @@ const Receipt: React.FC<ReceiptProps> = ({ data }) => {
 }
         `}
       </style>
-      <div id="receipt-print-zone" className="text-[11px] font-mono text-black w-[58mm] p-2">
+      <div className="text-[11px] font-mono text-black w-[58mm] p-2">
         {/* Header */}
         <div className="text-center">
           <h1 className="font-bold text-sm">PIEL DIVINA</h1>
@@ -109,7 +125,8 @@ const Receipt: React.FC<ReceiptProps> = ({ data }) => {
           <p className="mt-2 mb-4">.</p>
         </div>
       </div>
-    </>
+    </>,
+    portalNode
   );
 };
 
