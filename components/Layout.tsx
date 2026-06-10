@@ -22,9 +22,9 @@ export default function Layout() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col print:bg-white pb-16 md:pb-0 print:pb-0">
+    <div className="min-h-screen bg-gray-50 flex flex-col pb-16 md:pb-0">
       {/* Desktop Header */}
-      <header className="hidden md:block bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 print:hidden">
+      <header className="hidden md:block bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function Layout() {
       </header>
 
       {/* Mobile Top Header (Minimal) */}
-      <header className="md:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 flex items-center justify-between px-4 h-14 print:hidden">
+      <header className="md:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-2">
           <img src="/logo_piel_divina.jpeg" alt="Logo Piel Divina" className="h-8 w-8 rounded-full object-cover shadow-sm border border-teal-100" />
           <span className="font-bold text-gray-900">Piel Divina</span>
@@ -99,7 +99,7 @@ export default function Layout() {
       </header>
 
       {/* Mobile Bottom Tab Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex items-center justify-around pb-safe pt-1 print:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex items-center justify-around pb-safe pt-1 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <Link
           to="/pos"
           className={`flex flex-col items-center p-2 min-w-[64px] ${isActive('/pos') ? 'text-teal-600' : 'text-slate-500'}`}
@@ -134,7 +134,7 @@ export default function Layout() {
         )}
       </nav>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 print:p-0 print:m-0 print:w-full print:max-w-none">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         <InventoryProvider>
           <Outlet />
         </InventoryProvider>
