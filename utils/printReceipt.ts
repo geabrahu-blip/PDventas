@@ -7,9 +7,7 @@ export interface PrintSaleData {
 }
 
 export const printReceipt = (saleData: PrintSaleData) => {
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -74,28 +72,81 @@ export const printReceipt = (saleData: PrintSaleData) => {
     </html>
   `;
 
-  const doc = iframe.contentWindow?.document;
-  if (doc) {
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
+  if (isMobile) {
+    // Para móviles, intentamos abrir una nueva ventana o pestaña con el HTML.
+    // Esto previene el bug de Android donde se imprime la pantalla principal en vez del Iframe.
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
 
-    // Allow time for rendering before calling print
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-
-      // Clean up iframe after printing dialogue is handled
+      // Permitir renderizado
       setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
-      }, 1000);
-    }, 300);
+        printWindow.focus();
+        printWindow.print();
+        // Cerramos la ventana después de imprimir si es necesario,
+        // pero en móviles puede ser mejor dejar que el usuario la cierre manualmente o con el sistema operativo
+      }, 500);
+    } else {
+      // Fallback si el navegador bloquea los popups en móvil:
+      // Inyectamos un iframe visible pero fuera del área visible usando z-index o posicionamiento.
+      // Ocultar la visibilidad usando position fixed previene que interfiera visualmente
+      // pero permite al navegador imprimir el iframe.
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 1000);
+        }, 500);
+      }
+    }
   } else {
-    // Fallback if iframe fails to initialize
-    if (document.body.contains(iframe)) {
-       document.body.removeChild(iframe);
+    // Comportamiento original para escritorio
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+
+      // Allow time for rendering before calling print
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+
+        // Clean up iframe after printing dialogue is handled
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      }, 300);
+    } else {
+      // Fallback if iframe fails to initialize
+      if (document.body.contains(iframe)) {
+         document.body.removeChild(iframe);
+      }
     }
   }
 };
