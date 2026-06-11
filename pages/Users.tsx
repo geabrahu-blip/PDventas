@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
 import { getUsers, addUser, deleteUser } from '../services/db';
-import { Users as UsersIcon, Plus, Trash2, Mail, Key, User as UserIcon, Shield } from 'lucide-react';
+import { Users as UsersIcon, Plus, Trash2, Key, User as UserIcon, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -17,7 +17,7 @@ const Users = () => {
 
   // Form State
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'admin' | 'user'>('user');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,13 +49,15 @@ const Users = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Create user in Firebase Auth using the secondary app
-      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      // Create user in Firebase Auth using the secondary app and a dummy email
+      const dummyEmail = `${username.toLowerCase().trim()}@pieldivina.com`;
+      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
 
       // Save user profile in Firestore
       await addUser({
         name,
-        email,
+        username: username.toLowerCase().trim(),
+        email: dummyEmail,
         role
       }, userCredential.user.uid);
 
@@ -67,7 +69,7 @@ const Users = () => {
       console.error('Error creating user:', error);
       const firebaseError = error as { code?: string; message?: string };
       if (firebaseError.code === 'auth/email-already-in-use') {
-        showToast('El correo ya está en uso', 'error');
+        showToast('El nombre de usuario ya está en uso', 'error');
       } else if (firebaseError.code === 'auth/weak-password') {
         showToast('La contraseña debe tener al menos 6 caracteres', 'error');
       } else {
@@ -80,7 +82,7 @@ const Users = () => {
 
   const resetForm = () => {
     setName('');
-    setEmail('');
+    setUsername('');
     setPassword('');
     setRole('user');
   };
@@ -133,7 +135,7 @@ const Users = () => {
             <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4">Nombre</th>
-                <th className="px-6 py-4">Correo</th>
+                <th className="px-6 py-4">Usuario</th>
                 <th className="px-6 py-4">Rol</th>
                 <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
@@ -158,7 +160,7 @@ const Users = () => {
                       {user.name}
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {user.email}
+                      {user.username || user.email.split('@')[0]}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -231,18 +233,18 @@ const Users = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Usuario para Iniciar Sesión</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
+                    <UserIcon className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-3 border"
-                    placeholder="Ej. maria@ejemplo.com"
+                    placeholder="Ej. ana"
                   />
                 </div>
               </div>
@@ -294,7 +296,7 @@ const Users = () => {
               <button
                 type="button"
                 onClick={handleCreateUser}
-                disabled={isSubmitting || !name || !email || password.length < 6}
+                disabled={isSubmitting || !name || !username || password.length < 6}
                 className="px-4 py-2 text-sm font-medium text-white bg-teal-600 border border-transparent rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Creando...' : 'Crear Usuario'}

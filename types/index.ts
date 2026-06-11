@@ -3,7 +3,8 @@ export type Role = 'admin' | 'user';
 export interface User {
   id: string; // Firebase Auth UID
   name: string;
-  email: string;
+  username?: string;
+  email: string; // Used internally for Firebase Auth
   role: Role;
   storeId?: string; // assigned store for standard user
 }
