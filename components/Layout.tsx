@@ -56,14 +56,14 @@ export default function Layout() {
                   >
                     <Activity className="w-4 h-4" /> Kárdex
                   </Link>
-                  <Link
-                    to="/reports"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/reports') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
-                  >
-                    <FileText className="w-4 h-4" /> Reportes
-                  </Link>
                 </>
               )}
+              <Link
+                to="/reports"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/reports') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                <FileText className="w-4 h-4" /> Reportes
+              </Link>
             </nav>
           </div>
 
@@ -123,15 +123,15 @@ export default function Layout() {
               <Activity className="w-6 h-6 mb-1" />
               <span className="text-[10px] font-medium">Kárdex</span>
             </Link>
-            <Link
-              to="/reports"
-              className={`flex flex-col items-center p-2 min-w-[64px] ${isActive('/reports') ? 'text-teal-600' : 'text-slate-500'}`}
-            >
-              <FileText className="w-6 h-6 mb-1" />
-              <span className="text-[10px] font-medium">Reportes</span>
-            </Link>
           </>
         )}
+        <Link
+          to="/reports"
+          className={`flex flex-col items-center p-2 min-w-[64px] ${isActive('/reports') ? 'text-teal-600' : 'text-slate-500'}`}
+        >
+          <FileText className="w-6 h-6 mb-1" />
+          <span className="text-[10px] font-medium">Reportes</span>
+        </Link>
       </nav>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">

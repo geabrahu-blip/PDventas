@@ -27,7 +27,9 @@ export const processPOSSale = async (
   subtotal: number,
   total: number,
   globalDiscount: number,
-  paymentMethod: 'Cash' | 'QR'
+  paymentMethod: 'Cash' | 'QR',
+  userId?: string,
+  userName?: string
 ): Promise<void> => {
   const saleId = generateId();
   const saleRef = doc(db, 'sales', saleId);
@@ -77,6 +79,8 @@ export const processPOSSale = async (
     transaction.set(saleRef, {
       storeId: 'bodega', // Hardcoded single store
       clientName: clientName || 'Cliente Ocasional',
+      userId: userId || null,
+      userName: userName || null,
       items: items,
       subtotal: subtotal,
       total: total,

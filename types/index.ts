@@ -102,6 +102,8 @@ export interface SaleItem {
 export interface Sale {
   id: string;
   storeId: string;
+  userId?: string;
+  userName?: string;
   clientName: string;
   items: SaleItem[];
   subtotal: number;
