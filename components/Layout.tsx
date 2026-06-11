@@ -1,7 +1,7 @@
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Store, ShoppingCart, FileText, Menu, X, Activity } from 'lucide-react';
+import { LogOut, Store, ShoppingCart, FileText, Menu, X, Activity, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { InventoryProvider } from '../context/InventoryContext';
@@ -55,6 +55,12 @@ export default function Layout() {
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/kardex') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     <Activity className="w-4 h-4" /> Kárdex
+                  </Link>
+                  <Link
+                    to="/users"
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/users') ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <Users className="w-4 h-4" /> Usuarios
                   </Link>
                 </>
               )}
@@ -122,6 +128,13 @@ export default function Layout() {
             >
               <Activity className="w-6 h-6 mb-1" />
               <span className="text-[10px] font-medium">Kárdex</span>
+            </Link>
+            <Link
+              to="/users"
+              className={`flex flex-col items-center p-2 min-w-[64px] ${isActive('/users') ? 'text-teal-600' : 'text-slate-500'}`}
+            >
+              <Users className="w-6 h-6 mb-1" />
+              <span className="text-[10px] font-medium">Usuarios</span>
             </Link>
           </>
         )}
