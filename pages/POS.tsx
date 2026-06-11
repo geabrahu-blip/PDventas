@@ -4,7 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { processPOSSale } from '../services/db';
 import { InventoryItem } from '../types';
 import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Package, Sparkles, Trash2 } from 'lucide-react';
-import Receipt, { ReceiptData } from '../components/Receipt';
+import { printReceipt } from '../utils/printReceipt';
 
 interface CartItem {
   product: InventoryItem;
@@ -21,19 +21,7 @@ const POS = () => {
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR'>('Cash');
   const [globalDiscount, setGlobalDiscount] = useState<number | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [lastSaleData, setLastSaleData] = useState<ReceiptData | null>(null);
   const [activeTab, setActiveTab] = useState<'catalog' | 'cart'>('catalog');
-
-  useEffect(() => {
-    const handleAfterPrint = () => {
-      // Clear the receipt data to hide it and prepare for next sale
-      setLastSaleData(null);
-    };
-
-    window.addEventListener('afterprint', handleAfterPrint);
-    return () => window.removeEventListener('afterprint', handleAfterPrint);
-  }, []);
-
 
   // Filter products for the catalog
   const filteredProducts = useMemo(() => {
@@ -130,25 +118,18 @@ const POS = () => {
 
       showToast('Venta procesada exitosamente', 'success');
 
-      // Save data for the receipt
-      setLastSaleData({
+      // IMPRESIÓN CON IFRAME OCULTO
+      printReceipt({
         items: cart.map(item => ({
-          product: item.product,
+          name: item.product.name,
           quantity: item.quantity,
-          subtotal: item.product.sellingPrice * item.quantity
+          price: item.product.sellingPrice
         })),
         subtotal,
+        discount: Number(globalDiscount) || 0,
         total,
-        globalDiscount: Number(globalDiscount) || 0,
-        clientName,
-        paymentMethod,
         date: new Date()
       });
-
-      // Delay de sincronización para la tiquetera:
-      setTimeout(() => {
-        window.print();
-      }, 300);
 
       // Reset POS state
       setCart([]);
@@ -170,8 +151,6 @@ const POS = () => {
 
   return (
     <>
-      <Receipt data={lastSaleData} />
-
       <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 bg-slate-50 lg:p-2">
 
       {/* Mobile Tabs */}
