@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { LogIn, Key, Mail } from 'lucide-react';
+import { LogIn, Key, User as UserIcon } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -10,7 +10,7 @@ import { User } from '../types';
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -23,8 +23,11 @@ export default function Login() {
     setError('');
 
     try {
-      // Authenticate with Firebase Auth using email
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Format the username to email for Firebase Auth
+      const formattedEmail = username.includes('@') ? username : `${username.toLowerCase().trim()}@pieldivina.com`;
+
+      // Authenticate with Firebase Auth using formatted email
+      const userCredential = await signInWithEmailAndPassword(auth, formattedEmail, password);
 
       // Fetch custom user data from Firestore
       const userDocRef = doc(db, 'users', userCredential.user.uid);
@@ -44,12 +47,13 @@ export default function Login() {
       } else {
         setError('Usuario autenticado pero sin registro en la base de datos de usuarios.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Correo o contraseña incorrectos.');
+      const firebaseError = err as { code?: string; message?: string };
+      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
+        setError('Usuario o contraseña incorrectos.');
       } else {
-        setError(`Ocurrió un error al iniciar sesión: ${err.message || err.code || 'Desconocido'}`);
+        setError(`Ocurrió un error al iniciar sesión: ${firebaseError.message || firebaseError.code || 'Desconocido'}`);
       }
     }
   };
@@ -74,18 +78,18 @@ export default function Login() {
 
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Usuario o Correo</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <UserIcon className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-3 border"
-                  placeholder="Ej. admin@ejemplo.com"
+                  placeholder="Ej. ana"
                 />
               </div>
             </div>
