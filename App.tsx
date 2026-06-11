@@ -8,6 +8,7 @@ import Inventory from './pages/Inventory';
 import Catalog from './pages/Catalog';
 import Kardex from './pages/Kardex';
 import POS from './pages/POS';
+import Users from './pages/Users';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route path="/pos" element={<POS />} />
             <Route path="/kardex" element={<Kardex />} />
             <Route path="/reports" element={<SalesReport />} />
+            <Route path="/users" element={<Users />} />
               <Route path="/" element={<Navigate to="/inventory" replace />} />
               <Route path="*" element={<Navigate to="/inventory" replace />} />
             </Route>
