@@ -2,12 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { Sale } from '../types';
 import { getSales, cancelSale } from '../services/db';
 import { FileText, Calendar, DollarSign, Trash2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 
 const SalesReport = () => {
-  const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
@@ -69,6 +67,8 @@ const SalesReport = () => {
   };
 
   const totalSalesAmount = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalCashSales = filteredSales.reduce((sum, sale) => sale.paymentMethod === 'Cash' ? sum + sale.total : sum, 0);
+  const totalQRSales = filteredSales.reduce((sum, sale) => sale.paymentMethod === 'QR' ? sum + sale.total : sum, 0);
 
   return (
     <div className="space-y-6">
@@ -102,11 +102,23 @@ const SalesReport = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-teal-500 flex flex-col justify-center">
-          <p className="text-sm font-medium text-gray-500">Total Ingresos (Filtro Actual)</p>
+          <p className="text-sm font-medium text-gray-500">Total Neto (Filtro Actual)</p>
           <p className="text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
             <DollarSign className="w-5 h-5 text-teal-500" /> Bs. {(totalSalesAmount || 0).toFixed(2)}
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500 flex flex-col justify-center">
+          <p className="text-sm font-medium text-gray-500">Total Efectivo</p>
+          <p className="text-2xl font-bold text-green-600 flex items-center gap-2 mt-1">
+            <DollarSign className="w-5 h-5 text-green-500" /> Bs. {(totalCashSales || 0).toFixed(2)}
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500 flex flex-col justify-center">
+          <p className="text-sm font-medium text-gray-500">Total QR</p>
+          <p className="text-2xl font-bold text-purple-600 flex items-center gap-2 mt-1">
+            <DollarSign className="w-5 h-5 text-purple-500" /> Bs. {(totalQRSales || 0).toFixed(2)}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-cyan-500 flex flex-col justify-center">
@@ -135,11 +147,12 @@ const SalesReport = () => {
               <tr>
                 <th className="px-6 py-4">Fecha y Hora</th>
                 <th className="px-6 py-4">Sucursal</th>
+                <th className="px-6 py-4">Vendedor</th>
                 <th className="px-6 py-4">Cliente</th>
                 <th className="px-6 py-4">Productos</th>
                 <th className="px-6 py-4">Pago</th>
                 <th className="px-6 py-4 text-right">Total</th>
-                {isAdmin && <th className="px-6 py-4 text-center">Acciones</th>}
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -150,6 +163,9 @@ const SalesReport = () => {
                   </td>
                   <td className="px-6 py-4 font-medium text-gray-900">
                     Bodega Central
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {sale.userName || 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     {sale.clientName}
@@ -171,22 +187,20 @@ const SalesReport = () => {
                   <td className="px-6 py-4 text-right font-bold text-teal-600">
                     Bs. {(sale.total || 0).toFixed(2)}
                   </td>
-                  {isAdmin && (
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleDeleteClick(sale)}
-                        className="p-1 text-gray-400 hover:text-red-600 rounded-full transition-colors"
-                        title="Anular venta y devolver stock"
-                      >
-                        <Trash2 className="w-5 h-5 mx-auto" />
-                      </button>
-                    </td>
-                  )}
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleDeleteClick(sale)}
+                      className="p-1 text-gray-400 hover:text-red-600 rounded-full transition-colors"
+                      title="Anular venta y devolver stock"
+                    >
+                      <Trash2 className="w-5 h-5 mx-auto" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {filteredSales.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron ventas para los filtros seleccionados.
                   </td>
                 </tr>

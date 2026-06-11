@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { processPOSSale } from '../services/db';
 import { InventoryItem } from '../types';
 import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Package, Sparkles, Trash2 } from 'lucide-react';
@@ -14,6 +15,7 @@ interface CartItem {
 const POS = () => {
   const { inventory, refreshInventory } = useInventory();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -113,7 +115,9 @@ const POS = () => {
         subtotal,
         total,
         Number(globalDiscount) || 0,
-        paymentMethod
+        paymentMethod,
+        user?.id,
+        user?.name
       );
 
       showToast('Venta procesada exitosamente', 'success');
