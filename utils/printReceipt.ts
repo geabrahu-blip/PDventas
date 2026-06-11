@@ -15,14 +15,20 @@ export const printReceipt = (saleData: PrintSaleData) => {
       <head>
         <title>Recibo Piel Divina</title>
         <style>
-          @page { size: 58mm auto; margin: 0; }
+          @page { size: 80mm auto; margin: 0; }
           body {
             font-family: monospace;
-            width: 52mm; /* Margen de seguridad para 58mm */
             margin: 0;
-            padding: 2mm;
+            padding: 0;
             color: black;
-            font-size: 11px;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+          }
+          .receipt {
+            width: 72mm; /* Margen de seguridad para 78mm-80mm */
+            margin: 0 auto;
+            padding: 2mm;
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
@@ -31,8 +37,9 @@ export const printReceipt = (saleData: PrintSaleData) => {
         </style>
       </head>
       <body>
-        <div class="center bold" style="font-size: 14px;">PIEL DIVINA</div>
-        <div class="center">Cuidado Facial</div>
+        <div class="receipt">
+          <div class="center bold" style="font-size: 14px;">PIEL DIVINA</div>
+          <div class="center">Cuidado Facial</div>
         <div class="center">${(saleData.date || new Date()).toLocaleString('es-BO', {
           day: '2-digit',
           month: '2-digit',
@@ -66,8 +73,9 @@ export const printReceipt = (saleData: PrintSaleData) => {
           <span>TOTAL:</span>
           <span>Bs. ${saleData.total.toFixed(2)}</span>
         </div>
-        <div class="divider"></div>
-        <div class="center">¡Gracias por tu compra!</div>
+          <div class="divider"></div>
+          <div class="center">¡Gracias por tu compra!</div>
+        </div>
       </body>
     </html>
   `;
