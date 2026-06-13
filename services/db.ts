@@ -145,11 +145,13 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
     const qBarcode = query(collection(db, 'inventory'), where('barcode', '==', newProduct.barcode), where('storeId', '==', 'bodega'));
     const snap = await getDocs(qBarcode);
     if (!snap.empty) {
-      existingInv = { ...snap.docs[0].data(), id: snap.docs[0].id } as InventoryItem;
+      const items = snap.docs.map(d => ({ ...d.data(), id: d.id } as InventoryItem));
+      // Find the one that matches capacity exactly if multiple exist with same barcode
+      existingInv = items.find(item => (item.capacity || '') === (newProduct.capacity || ''));
     }
   }
 
-  // Fallback: search by name/brand/category if no barcode or no match by barcode
+  // Fallback: search by name/brand/category/capacity if no barcode or no match by barcode
   if (!existingInv) {
     // For large inventories, we could optimize this further (e.g. searching by name explicitly)
     // but without full-text search we still rely on loading the inventory or querying by exactly matching fields.
@@ -164,7 +166,8 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
     existingInv = potentialMatches.find(item =>
       item.name.toLowerCase().trim() === newProduct.name.toLowerCase().trim() &&
       (item.brand || '') === (newProduct.brand || '') &&
-      (item.category || '') === (newProduct.category || '')
+      (item.category || '') === (newProduct.category || '') &&
+      (item.capacity || '') === (newProduct.capacity || '')
     );
   }
 
@@ -229,6 +232,8 @@ export const updateProduct = async (updatedProduct: Product, updatePricesAllStor
     const snap = await getDocs(qBarcode);
     if (!snap.empty) {
       existingInvItems = snap.docs.map(d => ({ ...d.data(), id: d.id } as InventoryItem));
+      // Filter out items that have a different capacity
+      existingInvItems = existingInvItems.filter(item => (item.capacity || '') === (oldProduct.capacity || ''));
     }
   }
 
@@ -240,7 +245,8 @@ export const updateProduct = async (updatedProduct: Product, updatePricesAllStor
     existingInvItems = potentialMatches.filter(item =>
       item.name.toLowerCase().trim() === oldProduct.name.toLowerCase().trim() &&
       (item.brand || '') === (oldProduct.brand || '') &&
-      (item.category || '') === (oldProduct.category || '')
+      (item.category || '') === (oldProduct.category || '') &&
+      (item.capacity || '') === (oldProduct.capacity || '')
     );
   }
 

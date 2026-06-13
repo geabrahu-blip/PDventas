@@ -34,12 +34,12 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   useEffect(() => {
     // Load existing data for autocompletion
     getInventoryItems().then(items => {
-      // Create a unique list of products based on name+brand+category
+      // Create a unique list of products based on name+brand+capacity
       const uniqueProducts: InventoryItem[] = [];
       const seen = new Set();
 
       for (const item of items) {
-        const key = `${item.name.toLowerCase()}-${(item.brand || '').toLowerCase()}`;
+        const key = `${item.name.toLowerCase()}-${(item.brand || '').toLowerCase()}-${(item.capacity || '').toLowerCase()}`;
         if (!seen.has(key)) {
           seen.add(key);
           uniqueProducts.push(item);
