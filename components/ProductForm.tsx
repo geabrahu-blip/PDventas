@@ -3,6 +3,7 @@ import { Product, InventoryItem } from '../types';
 import { Image as ImageIcon, Plus, Save, X, Search } from 'lucide-react';
 import { getInventoryItems } from '../services/db';
 import imageCompression from 'browser-image-compression';
+import { useToast } from '../context/ToastContext';
 
 interface ProductFormProps {
   onAdd: (product: Omit<Product, 'id'>) => void;
@@ -11,6 +12,7 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: ProductFormProps) {
+  const { showToast } = useToast();
   const [image, setImage] = useState('');
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
@@ -136,7 +138,27 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || priceBs === '' || units === '' || wholesalePrice === '' || sellingPrice === '') return;
+
+    if (!name) {
+      showToast('El nombre del producto es obligatorio', 'error');
+      return;
+    }
+    if (units === '') {
+      showToast('La cantidad de unidades es obligatoria', 'error');
+      return;
+    }
+    if (priceBs === '') {
+      showToast('El precio de compra es obligatorio', 'error');
+      return;
+    }
+    if (wholesalePrice === '') {
+      showToast('El precio por mayor es obligatorio', 'error');
+      return;
+    }
+    if (sellingPrice === '') {
+      showToast('El precio por unidad es obligatorio', 'error');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -162,6 +184,9 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       if (!editingProduct) {
         resetForm();
       }
+    } catch (error: any) {
+      console.error('Error submitting form:', error);
+      showToast(error.message || 'Error inesperado al guardar el producto.', 'error');
     } finally {
       setIsSubmitting(false);
     }
