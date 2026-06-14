@@ -1,5 +1,6 @@
 import ProductForm from "../components/ProductForm";
 import React, { useState } from 'react';
+import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
 import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
 import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box } from 'lucide-react';
@@ -243,150 +244,166 @@ const Inventory = () => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
+      <div className="hidden md:block bg-white rounded-lg shadow h-[calc(100vh-250px)]">
+        {filteredProducts.length === 0 ? (
+          <div className="flex justify-center items-center h-full text-gray-500">
+            No se encontraron productos en el inventario.
+          </div>
+        ) : (
+          <TableVirtuoso
+            style={{ height: '100%' }}
+            data={filteredProducts}
+            components={{
+              Table: ({ style, ...props }) => (
+                <table {...props} style={{ ...style, width: '100%', textAlign: 'left', fontSize: '0.875rem' }} className="min-w-full" />
+              ),
+              TableHead: React.forwardRef((props, ref) => (
+                <thead {...props} ref={ref} className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200 sticky top-0 z-10" />
+              )),
+              TableRow: (props) => (
+                <tr {...props} className="hover:bg-gray-50 border-b border-gray-100 last:border-0" />
+              ),
+              TableBody: React.forwardRef((props, ref) => (
+                <tbody {...props} ref={ref} className="divide-y divide-gray-200" />
+              )),
+            }}
+            fixedHeaderContent={() => (
               <tr>
-                <th className="px-6 py-4">Producto</th>
-                <th className="px-6 py-4 text-center">Stock</th>
-                <th className="px-6 py-4 text-right">Precio Venta</th>
-                <th className="px-6 py-4 text-center">Acciones</th>
+                <th className="px-6 py-4 bg-gray-50">Producto</th>
+                <th className="px-6 py-4 bg-gray-50 text-center">Stock</th>
+                <th className="px-6 py-4 bg-gray-50 text-right">Precio Venta</th>
+                <th className="px-6 py-4 bg-gray-50 text-center">Acciones</th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-gray-100 rounded overflow-hidden">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Package className="w-full h-full p-2 text-gray-400" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{product.name}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap mt-1">
-                          {product.brand && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.brand}</span>}
-                          {product.categoryType && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.categoryType}</span>}
-                          {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 font-medium">{product.capacity}</span>}
-                          {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded">{product.gender}</span>}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center font-medium">
-                    {product.units}
-                  </td>
-                  <td className="px-6 py-4 text-right text-emerald-600 font-medium">
-                    Bs. {(product.sellingPrice || 0).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => handleOpenAdjust(product)}
-                            className="inline-flex items-center p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                            title="Ajustar Stock (Kárdex)"
-                          >
-                            <Box className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEdit(product)}
-                            className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                            title="Editar Producto"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(product.id)}
-                            className="inline-flex items-center p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
-                            title="Eliminar por error"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
+            )}
+            itemContent={(_, product) => (
+              <>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-gray-100 rounded overflow-hidden">
+                      {product.image ? (
+                        <img loading="lazy" src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-full h-full p-2 text-gray-400" />
                       )}
                     </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredProducts.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    No se encontraron productos en el inventario.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{product.name}</div>
+                      <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap mt-1">
+                        {product.brand && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{product.brand}</span>}
+                        {(product as any).categoryType && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{(product as any).categoryType}</span>}
+                        {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 font-medium">{product.capacity}</span>}
+                        {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded">{product.gender}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-center font-medium">
+                  {product.units}
+                </td>
+                <td className="px-6 py-4 text-right text-emerald-600 font-medium">
+                  Bs. {(product.sellingPrice || 0).toFixed(2)}
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => handleOpenAdjust(product)}
+                          className="inline-flex items-center p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          title="Ajustar Stock (Kárdex)"
+                        >
+                          <Box className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(product)}
+                          className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
+                          title="Editar Producto"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(product.id)}
+                          className="inline-flex items-center p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
+                          title="Eliminar por error"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </>
+            )}
+          />
+        )}
       </div>
 
       {/* Mobile Grid View */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {filteredProducts.map((product) => (
-          <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3">
-            <div className="flex gap-3">
-              <div className="h-16 w-16 shrink-0 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-100">
-                {product.image ? (
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                ) : (
-                  <Package className="w-8 h-8 text-gray-300" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${product.units < 5 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
-                    {product.units} ud.
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                  {product.category && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600">{product.category}</span>}
-                  {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600 font-medium">{product.capacity}</span>}
-                  {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 text-[10px]">{product.gender}</span>}
-                </div>
-
-                <div className="mt-2 text-sm font-bold text-slate-800">
-                  Bs. {(product.sellingPrice || 0).toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            {isAdmin && (
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
-                <button
-                  onClick={() => handleOpenAdjust(product)}
-                  className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Box className="w-4 h-4" /> Ajustar
-                </button>
-                <button
-                  onClick={() => handleOpenEdit(product)}
-                  className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Edit3 className="w-4 h-4" /> Editar
-                </button>
-                <button
-                  onClick={() => handleDeleteItem(product.id)}
-                  className="flex items-center justify-center min-w-[44px] min-h-[44px] bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
-                  title="Eliminar"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-        {filteredProducts.length === 0 && (
+      <div className="md:hidden">
+        {filteredProducts.length === 0 ? (
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
             No se encontraron productos en el inventario.
           </div>
+        ) : (
+          <Virtuoso
+            useWindowScroll
+            data={filteredProducts}
+            itemContent={(_, product) => (
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 mb-4">
+                <div className="flex gap-3">
+                  <div className="h-16 w-16 shrink-0 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-100">
+                    {product.image ? (
+                      <img loading="lazy" src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="w-8 h-8 text-gray-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${product.units < 5 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
+                        {product.units} ud.
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      {product.category && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600">{product.category}</span>}
+                      {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600 font-medium">{product.capacity}</span>}
+                      {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 text-[10px]">{product.gender}</span>}
+                    </div>
+
+                    <div className="mt-2 text-sm font-bold text-slate-800">
+                      Bs. {(product.sellingPrice || 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {isAdmin && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                    <button
+                      onClick={() => handleOpenAdjust(product)}
+                      className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Box className="w-4 h-4" /> Ajustar
+                    </button>
+                    <button
+                      onClick={() => handleOpenEdit(product)}
+                      className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Edit3 className="w-4 h-4" /> Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteItem(product.id)}
+                      className="flex items-center justify-center min-w-[44px] min-h-[44px] bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          />
         )}
       </div>
 

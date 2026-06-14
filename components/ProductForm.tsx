@@ -113,9 +113,10 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     if (file) {
       try {
         const options = {
-          maxSizeMB: 0.1, // compress down to ~100kb max
-          maxWidthOrHeight: 800,
+          maxSizeMB: 0.15, // max 150kb
+          maxWidthOrHeight: 600,
           useWebWorker: true,
+          fileType: 'image/webp',
         };
         const compressedFile = await imageCompression(file, options);
 
