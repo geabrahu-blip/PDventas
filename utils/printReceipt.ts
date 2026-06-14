@@ -89,12 +89,15 @@ export const printReceipt = (saleData: PrintSaleData) => {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
 
+      // Cerrar la ventana tan pronto termine de imprimir o cancele el diálogo
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+
       // Permitir renderizado
       setTimeout(() => {
         printWindow.focus();
         printWindow.print();
-        // Cerramos la ventana después de imprimir si es necesario,
-        // pero en móviles puede ser mejor dejar que el usuario la cierre manualmente o con el sistema operativo
       }, 500);
     } else {
       // Fallback si el navegador bloquea los popups en móvil:
