@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import * as path from 'path';
 
 async function verify_feature(page) {
-  await page.goto("http://localhost:5173/catalogo");
+  await page.goto("http://localhost:4173/catalogo");
   await page.waitForTimeout(500);
 
   // Take a screenshot of the catalog page
