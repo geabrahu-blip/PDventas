@@ -220,9 +220,10 @@ const Inventory = () => {
                 await refreshInventory();
                 showToast('Producto añadido al inventario exitosamente', 'success');
                 setIsAddProductOpen(false);
-              } catch (e) {
+              } catch (e: any) {
                 console.error(e);
-                showToast('Error al añadir producto', 'error');
+                // Propagate the error so ProductForm doesn't clear and shows the specific message
+                throw e;
               }
             }}
           />
