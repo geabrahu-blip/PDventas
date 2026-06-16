@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Product, InventoryItem } from '../types';
 import { Image as ImageIcon, Plus, Save, X, Search } from 'lucide-react';
-import { getInventoryItems } from '../services/db';
 import imageCompression from 'browser-image-compression';
 import { useToast } from '../context/ToastContext';
+import { useInventory } from '../context/InventoryContext';
 
 interface ProductFormProps {
   onAdd: (product: Omit<Product, 'id'>) => void;
@@ -29,31 +29,29 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Autocomplete State
-  const [existingBrands, setExistingBrands] = useState<string[]>([]);
-  const [globalProducts, setGlobalProducts] = useState<InventoryItem[]>([]);
+  const { inventory } = useInventory();
   const [showProductSearch, setShowProductSearch] = useState(false);
 
-  useEffect(() => {
-    // Load existing data for autocompletion
-    getInventoryItems().then(items => {
-      // Create a unique list of products based on name+brand+capacity
-      const uniqueProducts: InventoryItem[] = [];
-      const seen = new Set();
+  const { existingBrands, globalProducts } = useMemo(() => {
+    const items = inventory || [];
+    const uniqueProducts: InventoryItem[] = [];
+    const seen = new Set();
 
-      for (const item of items) {
-        const key = `${item.name.toLowerCase()}-${(item.brand || '').toLowerCase()}-${(item.capacity || '').toLowerCase()}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          uniqueProducts.push(item);
-        }
+    for (const item of items) {
+      if (!item.name) continue;
+      const key = `${item.name.toLowerCase()}-${(item.brand || '').toLowerCase()}-${(item.capacity || '').toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueProducts.push(item);
       }
+    }
 
-      setGlobalProducts(uniqueProducts);
-
-      const brands = new Set(items.map(i => i.brand).filter(b => !!b) as string[]);
-      setExistingBrands(Array.from(brands).sort());
-    });
-  }, []);
+    const brands = new Set(items.map(i => i.brand).filter(b => !!b) as string[]);
+    return {
+      existingBrands: Array.from(brands).sort(),
+      globalProducts: uniqueProducts
+    };
+  }, [inventory]);
 
   const handleSelectExistingProduct = (p: InventoryItem) => {
     setName(p.name);

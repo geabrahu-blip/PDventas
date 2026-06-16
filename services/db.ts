@@ -132,12 +132,9 @@ export const adjustProductStock = async (
 
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-  const id = generateId();
-  const newProduct: Product = { ...product, id };
-  const sanitizedNewProduct = JSON.parse(JSON.stringify(newProduct));
-  await setDoc(doc(db, 'products', id), sanitizedNewProduct);
+  const newProduct = { ...product };
 
-  // Look for existing product in Bodega to merge stock instead of duplicate
+  // Look for existing product in Bodega
   let existingInv;
 
   if (newProduct.barcode) {
@@ -153,14 +150,9 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
 
   // Fallback: search by name/brand/category/capacity if no barcode or no match by barcode
   if (!existingInv) {
-    // For large inventories, we could optimize this further (e.g. searching by name explicitly)
-    // but without full-text search we still rely on loading the inventory or querying by exactly matching fields.
-    // Querying by name directly is much faster than downloading all items.
     const qName = query(collection(db, 'inventory'), where('name', '==', newProduct.name), where('storeId', '==', 'bodega'));
     const nameSnap = await getDocs(qName);
 
-    // Check if any returned match the other criteria (to be safe against case sensitivity or partial matches if we did complex queries)
-    // The exact query on name is case sensitive in Firebase. We'll use this optimized fetch instead of getInventoryItems() to save massive reads.
     const potentialMatches = nameSnap.docs.map(d => ({...d.data(), id: d.id} as InventoryItem));
 
     existingInv = potentialMatches.find(item =>
@@ -172,45 +164,36 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
   }
 
   if (existingInv) {
-    // Update existing inventory item (add units, update prices to latest)
-    const updatedInv = {
-      ...existingInv,
-      units: existingInv.units + newProduct.units,
-      priceBs: newProduct.priceBs, // Update to latest cost
-      wholesalePrice: newProduct.wholesalePrice,
-      sellingPrice: newProduct.sellingPrice,
-      gender: newProduct.gender || existingInv.gender,
-      capacity: newProduct.capacity || existingInv.capacity,
-      categoryType: newProduct.categoryType || existingInv.categoryType,
-      image: newProduct.image || existingInv.image, // update image if new one provided
-    };
-    const sanitizedUpdatedInv = JSON.parse(JSON.stringify(updatedInv));
-    await setDoc(doc(db, 'inventory', existingInv.id), sanitizedUpdatedInv);
-    await syncToPublicCatalog(sanitizedUpdatedInv);
-  } else {
-    // Create an initial inventory record in Bodega
-    const invId = generateId();
-    const invItem: InventoryItem = {
-      id: invId,
-      productId: id, // acts as reference to the original product that created it
-      storeId: 'bodega',
-      units: newProduct.units,
-      name: newProduct.name,
-      brand: newProduct.brand,
-      category: newProduct.category,
-      gender: newProduct.gender,
-      barcode: newProduct.barcode,
-      image: newProduct.image,
-      priceBs: newProduct.priceBs,
-      wholesalePrice: newProduct.wholesalePrice,
-      sellingPrice: newProduct.sellingPrice,
-    };
-    const sanitizedInvItem = JSON.parse(JSON.stringify(invItem));
-    await setDoc(doc(db, 'inventory', invId), sanitizedInvItem);
-    await syncToPublicCatalog(sanitizedInvItem);
+    throw new Error('Este producto ya existe, si quieres agregar más stock ve a editarlo.');
   }
 
-  return newProduct;
+  const id = generateId();
+  const newProductWithId: Product = { ...newProduct, id };
+  const sanitizedNewProduct = JSON.parse(JSON.stringify(newProductWithId));
+  await setDoc(doc(db, 'products', id), sanitizedNewProduct);
+
+  // Create an initial inventory record in Bodega
+  const invId = generateId();
+  const invItem: InventoryItem = {
+    id: invId,
+    productId: id, // acts as reference to the original product that created it
+    storeId: 'bodega',
+    units: newProductWithId.units,
+    name: newProductWithId.name,
+    brand: newProductWithId.brand,
+    category: newProductWithId.category,
+    gender: newProductWithId.gender,
+    barcode: newProductWithId.barcode,
+    image: newProductWithId.image,
+    priceBs: newProductWithId.priceBs,
+    wholesalePrice: newProductWithId.wholesalePrice,
+    sellingPrice: newProductWithId.sellingPrice,
+  };
+  const sanitizedInvItem = JSON.parse(JSON.stringify(invItem));
+  await setDoc(doc(db, 'inventory', invId), sanitizedInvItem);
+  await syncToPublicCatalog(sanitizedInvItem);
+
+  return newProductWithId;
 };
 
 export const updateProduct = async (updatedProduct: Product, updatePricesAllStores: boolean = false): Promise<Product> => {
