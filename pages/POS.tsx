@@ -156,7 +156,7 @@ const POS = () => {
 
   return (
     <>
-      <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 bg-slate-50 lg:p-2">
+      <div className="h-[calc(100vh-8rem)] min-h-[550px] flex flex-col lg:flex-row gap-4 lg:gap-6 bg-slate-50 lg:p-2">
 
       {/* Mobile Tabs */}
       <div className="lg:hidden flex bg-white border-b border-slate-200 sticky top-14 z-40 shrink-0">
@@ -289,7 +289,7 @@ const POS = () => {
       </div>
 
       {/* Right Panel: Cart & Checkout */}
-      <div className={`${activeTab === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/3 flex-col h-full bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200 overflow-hidden pb-28 lg:pb-0`}>
+      <div className={`${activeTab === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/3 flex-col h-full bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200 overflow-y-auto lg:overflow-hidden pb-28 lg:pb-0`}>
         <div className="hidden lg:flex p-5 border-b border-slate-100 items-center justify-between shrink-0">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-cyan-500" />
@@ -301,7 +301,7 @@ const POS = () => {
         </div>
 
         {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto max-h-[40vh] border-b border-slate-100 mb-2 p-3 lg:p-5 space-y-3 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto min-h-0 border-b border-slate-100 mb-2 p-3 lg:p-5 space-y-3 bg-slate-50/30">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
@@ -349,7 +349,7 @@ const POS = () => {
         </div>
 
         {/* Checkout Section */}
-        <div className="p-3 lg:p-5 bg-white space-y-3 lg:space-y-5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10">
+        <div className="p-3 lg:p-5 bg-white space-y-3 lg:space-y-5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10 shrink-0">
 
           <div className="space-y-3 lg:space-y-4">
             <div>
