@@ -4,9 +4,11 @@ import { getSales, cancelSale } from '../services/db';
 import { FileText, Calendar, DollarSign, Trash2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
 
 const SalesReport = () => {
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
 
@@ -14,7 +16,7 @@ const SalesReport = () => {
   const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
 
   // Filters
-  const [filterDate, setFilterDate] = useState<string>('');
+  const [filterDate, setFilterDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
   const applyFilters = useCallback(() => {
     let result = sales;
@@ -79,27 +81,34 @@ const SalesReport = () => {
         </h1>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-            <Calendar className="w-4 h-4" /> Fecha
-          </label>
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
-          />
-        </div>
+      {/* Filters / Headers */}
+      {isAdmin ? (
+        <div className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+              <Calendar className="w-4 h-4" /> Fecha
+            </label>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+            />
+          </div>
 
-        <button
-          onClick={() => setFilterDate('')}
-          className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md"
-        >
-          Limpiar Filtro
-        </button>
-      </div>
+          <button
+            onClick={() => setFilterDate('')}
+            className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md"
+          >
+            Limpiar Filtro
+          </button>
+        </div>
+      ) : (
+        <div className="bg-teal-50 p-4 rounded-lg border border-teal-100 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-teal-600" />
+          <span className="text-teal-800 font-medium">Ventas de Hoy</span>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

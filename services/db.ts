@@ -600,17 +600,18 @@ export const cancelSale = async (saleId: string, items: { productId: string, nam
       const inventoryRef = doc(db, 'inventory', item.productId);
       const inventoryDoc = await transaction.get(inventoryRef);
 
-      if (!inventoryDoc.exists()) {
-        throw new Error(`Producto ${item.name} no encontrado en el inventario para poder hacer la devolución.`);
+      if (inventoryDoc.exists()) {
+        const currentUnits = inventoryDoc.data().units || 0;
+
+        inventoryDocs.push({
+          ref: inventoryRef,
+          item: item,
+          newUnits: currentUnits + item.quantity // Revert the sale by adding back the stock
+        });
       }
-
-      const currentUnits = inventoryDoc.data().units || 0;
-
-      inventoryDocs.push({
-        ref: inventoryRef,
-        item: item,
-        newUnits: currentUnits + item.quantity // Revert the sale by adding back the stock
-      });
+      // If the product doesn't exist anymore, we just skip returning the stock and Kardex log.
+      // This is necessary because if a dummy product was sold and then deleted, we still need
+      // to be able to cancel the sale to remove the financial record.
     }
 
     // 2. Perform all writes
