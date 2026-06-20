@@ -64,6 +64,7 @@ const Inventory = () => {
 
       setIsAdjustModalOpen(false);
       setSelectedAdjustItem(null);
+      await refreshInventory();
       showToast('Stock ajustado y registrado en el Kárdex exitosamente', 'success');
     } catch (error: any) {
       console.error('Error adjusting stock:', error);
@@ -88,6 +89,7 @@ const Inventory = () => {
       setIsEditModalOpen(false);
       setEditItem(null);
       updateLocalInventoryItem(updatedItem);
+      await refreshInventory();
       showToast('Producto actualizado con éxito', 'success');
     } catch (error) {
       console.error('Error updating product:', error);
@@ -123,6 +125,7 @@ const Inventory = () => {
     try {
       await deleteInventoryItem(itemToDelete);
       removeLocalInventoryItem(itemToDelete);
+      await refreshInventory();
       showToast('Registro eliminado del inventario', 'info');
     } catch (error) {
       console.error('Error deleting item:', error);

@@ -9,11 +9,11 @@ async def run():
         await page.wait_for_timeout(2000)
 
         # Click search to trigger load
-        await page.click('input[placeholder="Buscar perfumes..."]')
+        await page.click('input[placeholder="Buscar cosméticos..."]')
         await page.wait_for_timeout(2000) # Wait for load to finish
 
         # Type search
-        await page.fill('input[placeholder="Buscar perfumes..."]', 'Sauvage')
+        await page.fill('input[placeholder="Buscar cosméticos..."]', 'Sauvage')
         await page.wait_for_timeout(2000)
 
         await page.screenshot(path='/home/jules/verification/screenshots/verification_search.png')
