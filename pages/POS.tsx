@@ -221,7 +221,7 @@ const POS = () => {
                   const inCartItem = cart.find(c => c.product.id === product.id);
                   const availableStock = product.units - (inCartItem ? inCartItem.quantity : 0);
                   const isOutOfStockForCart = availableStock <= 0;
-                  const isLowStock = product.units < 5;
+                  const isLowStock = product.units > 0 && product.units <= 2;
 
                   return (
                     <div
@@ -241,7 +241,7 @@ const POS = () => {
                           )}
                           {/* Stock Badge */}
                           <div className={`absolute top-3 right-3 text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-sm backdrop-blur-sm border
-                            ${isLowStock
+                            ${isOutOfStockForCart ? 'bg-red-50/90 text-red-600 border-red-100' : isLowStock
                               ? 'bg-orange-50/90 text-orange-600 border-orange-100'
                               : 'bg-white/90 text-slate-600 border-slate-200'}
                           `}>

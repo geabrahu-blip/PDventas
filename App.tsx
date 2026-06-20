@@ -9,6 +9,7 @@ import Catalog from './pages/Catalog';
 import Kardex from './pages/Kardex';
 import POS from './pages/POS';
 import Users from './pages/Users';
+import Alerts from './pages/Alerts';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/kardex" element={<Kardex />} />
             <Route path="/reports" element={<SalesReport />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/alerts" element={<Alerts />} />
               <Route path="/" element={<Navigate to="/inventory" replace />} />
               <Route path="*" element={<Navigate to="/inventory" replace />} />
             </Route>
