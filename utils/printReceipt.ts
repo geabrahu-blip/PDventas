@@ -38,8 +38,8 @@ export const printReceipt = (saleData: PrintSaleData) => {
       </head>
       <body>
         <div class="receipt">
-          <div class="center bold" style="font-size: 14px;">PIEL DIVINA</div>
-          <div class="center">Cuidado Facial</div>
+          <div class="center bold" style="font-size: 14px;">PIEL DIVINA LG</div>
+          <div class="center">El Centro de Tu Belleza</div>
         <div class="center">${(saleData.date || new Date()).toLocaleString('es-BO', {
           day: '2-digit',
           month: '2-digit',
@@ -75,6 +75,7 @@ export const printReceipt = (saleData: PrintSaleData) => {
         </div>
           <div class="divider"></div>
           <div class="center">¡Gracias por tu compra!</div>
+          <div style="height: 30px;"></div>
         </div>
       </body>
     </html>
