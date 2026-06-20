@@ -25,6 +25,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [capacity, setCapacity] = useState('');
   const [expirationDate, setExpirationDate] = useState('');
   const [barcode, setBarcode] = useState('');
+  const [categoryType, setCategoryType] = useState('Skincare'); // Main category
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,6 +60,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCategory(p.category || '');
     setGender(p.gender || '');
     setCapacity(p.capacity || '');
+    setCategoryType(p.categoryType || 'Skincare');
     setExpirationDate(p.expirationDate || '');
     setBarcode(p.barcode || '');
     setImage(p.image || '');
@@ -80,6 +82,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setCategory(editingProduct.category || '');
       setGender(editingProduct.gender || '');
       setCapacity(editingProduct.capacity || '');
+      setCategoryType(editingProduct.categoryType || 'Skincare');
       setExpirationDate(editingProduct.expirationDate || '');
       setBarcode(editingProduct.barcode || '');
       setPriceBs(editingProduct.priceBs);
@@ -98,6 +101,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setCategory('');
     setGender('');
     setCapacity('');
+    setCategoryType('Skincare');
     setExpirationDate('');
     setBarcode('');
     setPriceBs('');
@@ -146,14 +150,24 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       showToast('La cantidad de unidades es obligatoria', 'error');
       return;
     }
-    if (priceBs === '') {
-      showToast('El precio de compra es obligatorio', 'error');
-      return;
+
+    let finalPriceBs = priceBs;
+    let finalWholesalePrice = wholesalePrice;
+
+    if (categoryType === 'Perfumes') {
+      finalPriceBs = 0;
+      finalWholesalePrice = 0;
+    } else {
+      if (priceBs === '') {
+        showToast('El precio de compra es obligatorio', 'error');
+        return;
+      }
+      if (wholesalePrice === '') {
+        showToast('El precio por mayor es obligatorio', 'error');
+        return;
+      }
     }
-    if (wholesalePrice === '') {
-      showToast('El precio por mayor es obligatorio', 'error');
-      return;
-    }
+
     if (sellingPrice === '') {
       showToast('El precio por unidad es obligatorio', 'error');
       return;
@@ -161,21 +175,22 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
     setIsSubmitting(true);
     try {
-      const totalPrice = Number(priceBs) * Number(units);
+      const totalPrice = Number(finalPriceBs) * Number(units);
 
       // We await onAdd here so if there's an error we don't clear the form
       await onAdd({
         name,
         brand,
         category,
-        gender,
+        gender: categoryType === 'Proteínas/Suplementos' || categoryType === 'Desodorantes' || categoryType === 'Otros' ? '' : gender,
         capacity,
+        categoryType,
         expirationDate,
         barcode,
         image,
-        priceBs: Number(priceBs),
+        priceBs: Number(finalPriceBs),
         units: Number(units),
-        wholesalePrice: Number(wholesalePrice),
+        wholesalePrice: Number(finalWholesalePrice),
         sellingPrice: Number(sellingPrice),
         totalPrice,
       });
@@ -238,6 +253,26 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
             />
           </div>
+        </div>
+
+        {/* Categoría Principal */}
+        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+          <label htmlFor="prod-category-type" className="block text-sm font-medium text-gray-700 mb-1">Categoría Principal del Producto</label>
+          <select
+            id="prod-category-type"
+            value={categoryType}
+            onChange={(e) => {
+              setCategoryType(e.target.value);
+              setGender(''); // reset gender when category type changes
+            }}
+            className="w-full px-3 py-2 border border-teal-200 bg-teal-50 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium text-teal-900"
+          >
+            <option value="Skincare">Skincare (Cuidado de Piel)</option>
+            <option value="Perfumes">Perfumes</option>
+            <option value="Proteínas/Suplementos">Proteínas y Suplementos</option>
+            <option value="Desodorantes">Desodorantes</option>
+            <option value="Otros">Otros</option>
+          </select>
         </div>
 
         {/* Código de Barras */}
@@ -333,33 +368,49 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           />
         </div>
 
-        <div className="col-span-1">
-          <label htmlFor="prod-gender" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Piel</label>
-          <select
-            id="prod-gender"
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-          >
-            <option value="">Seleccionar...</option>
-            <option value="Todo tipo de piel">Todo tipo de piel</option>
-            <option value="Piel Grasa">Piel Grasa</option>
-            <option value="Piel Seca">Piel Seca</option>
-            <option value="Piel Mixta">Piel Mixta</option>
-            <option value="Piel Sensible">Piel Sensible</option>
-            <option value="Piel con manchas">Piel con manchas</option>
-          </select>
-        </div>
+        {categoryType !== 'Proteínas/Suplementos' && categoryType !== 'Desodorantes' && categoryType !== 'Otros' && (
+          <div className="col-span-1">
+            <label htmlFor="prod-gender" className="block text-sm font-medium text-gray-700 mb-1">
+              {categoryType === 'Perfumes' ? 'Género' : 'Tipo de Piel'}
+            </label>
+            <select
+              id="prod-gender"
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="">Seleccionar...</option>
+              {categoryType === 'Perfumes' ? (
+                <>
+                  <option value="Mujer">Mujer</option>
+                  <option value="Varón">Varón</option>
+                  <option value="Unisex">Unisex</option>
+                </>
+              ) : (
+                <>
+                  <option value="Todo tipo de piel">Todo tipo de piel</option>
+                  <option value="Piel Grasa">Piel Grasa</option>
+                  <option value="Piel Seca">Piel Seca</option>
+                  <option value="Piel Mixta">Piel Mixta</option>
+                  <option value="Piel Sensible">Piel Sensible</option>
+                  <option value="Piel con manchas">Piel con manchas</option>
+                </>
+              )}
+            </select>
+          </div>
+        )}
 
-        <div className="col-span-1">
-          <label htmlFor="prod-capacity" className="block text-sm font-medium text-gray-700 mb-1">Presentación (ml/g)</label>
+        <div className={`col-span-1 ${categoryType === 'Proteínas/Suplementos' || categoryType === 'Desodorantes' || categoryType === 'Otros' ? 'md:col-span-2' : ''}`}>
+          <label htmlFor="prod-capacity" className="block text-sm font-medium text-gray-700 mb-1">
+            {categoryType === 'Proteínas/Suplementos' ? 'Presentación / Tamaño' : 'Presentación (ml/g)'}
+          </label>
           <input
             id="prod-capacity"
             type="text"
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            placeholder="Ej. 30ml, 50ml"
+            placeholder={categoryType === 'Proteínas/Suplementos' ? 'Ej. 5 lbs, 60 servicios' : 'Ej. 30ml, 50ml'}
           />
         </div>
 
@@ -390,34 +441,38 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             />
           </div>
 
-          <div className="col-span-1">
-            <label htmlFor="prod-price-bs" className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Bs)</label>
-            <input
-              id="prod-price-bs"
-              type="number"
-              step="0.01"
-              required
-              value={priceBs}
-              onChange={(e) => setPriceBs(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
+          {categoryType !== 'Perfumes' && (
+            <>
+              <div className="col-span-1">
+                <label htmlFor="prod-price-bs" className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Bs)</label>
+                <input
+                  id="prod-price-bs"
+                  type="number"
+                  step="0.01"
+                  required={categoryType !== 'Perfumes'}
+                  value={priceBs}
+                  onChange={(e) => setPriceBs(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
 
-          <div className="col-span-1">
-            <label htmlFor="prod-price-mayor" className="block text-sm font-medium text-gray-700 mb-1">Precio x Mayor</label>
-            <input
-              id="prod-price-mayor"
-              type="number"
-              step="0.01"
-              required
-              value={wholesalePrice}
-              onChange={(e) => setWholesalePrice(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
+              <div className="col-span-1">
+                <label htmlFor="prod-price-mayor" className="block text-sm font-medium text-gray-700 mb-1">Precio x Mayor</label>
+                <input
+                  id="prod-price-mayor"
+                  type="number"
+                  step="0.01"
+                  required={categoryType !== 'Perfumes'}
+                  value={wholesalePrice}
+                  onChange={(e) => setWholesalePrice(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+            </>
+          )}
 
-          <div className="col-span-1">
-            <label htmlFor="prod-price-unidad" className="block text-sm font-medium text-gray-700 mb-1">Precio Unidad</label>
+          <div className={`col-span-1 ${categoryType === 'Perfumes' ? 'sm:col-span-1 lg:col-span-3' : ''}`}>
+            <label htmlFor="prod-price-unidad" className="block text-sm font-medium text-gray-700 mb-1">Precio Unidad (Venta al Público)</label>
             <input
               id="prod-price-unidad"
               type="number"
@@ -425,7 +480,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               required
               value={sellingPrice}
               onChange={(e) => setSellingPrice(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-teal-300 bg-teal-50 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
         </div>
@@ -433,8 +488,12 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <div className="text-sm">
-          <span className="text-gray-500">Costo Total del Lote: </span>
-          <span className="text-lg font-bold text-gray-900">Bs. {currentTotal}</span>
+          {categoryType !== 'Perfumes' && (
+            <>
+              <span className="text-gray-500">Costo Total del Lote: </span>
+              <span className="text-lg font-bold text-gray-900">Bs. {currentTotal}</span>
+            </>
+          )}
         </div>
 
         <div className="flex gap-2">
