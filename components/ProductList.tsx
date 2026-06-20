@@ -36,8 +36,15 @@ export default function ProductList({ products, onDelete, onEdit, isAdmin }: Pro
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+            {products.map((product) => {
+              let rowClass = "hover:bg-gray-50 transition-colors";
+              if (product.units === 0) {
+                rowClass = "bg-red-50 hover:bg-red-100 transition-colors";
+              } else if (product.units > 0 && product.units <= 2) {
+                rowClass = "bg-orange-50 hover:bg-orange-100 transition-colors";
+              }
+              return (
+              <tr key={product.id} className={rowClass}>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
@@ -57,8 +64,10 @@ export default function ProductList({ products, onDelete, onEdit, isAdmin }: Pro
                   {product.category && <div>{product.category}</div>}
                   {product.gender && <div>{product.gender}</div>}
                 </td>
-                <td className="px-6 py-4 text-center font-medium">
-                  {product.units}
+                <td className="px-6 py-4 text-center">
+                  <span className={`inline-flex items-center justify-center min-w-[3rem] px-2.5 py-1 rounded-full text-xs font-bold shadow-sm border ${product.units === 0 ? 'bg-red-100 text-red-700 border-red-200' : (product.units > 0 && product.units <= 2) ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-white text-slate-700 border-slate-200'}`}>
+                    {product.units}
+                  </span>
                 </td>
                 <td className="px-6 py-4 text-right text-gray-600">
                   {(product.priceBs || 0).toFixed(2)}
@@ -93,7 +102,7 @@ export default function ProductList({ products, onDelete, onEdit, isAdmin }: Pro
                   </td>
                 )}
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>

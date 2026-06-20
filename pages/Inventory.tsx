@@ -261,9 +261,15 @@ const Inventory = () => {
               TableHead: React.forwardRef((props, ref) => (
                 <thead {...props} ref={ref} className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200 sticky top-0 z-10" />
               )),
-              TableRow: (props) => (
-                <tr {...props} className="hover:bg-gray-50 border-b border-gray-100 last:border-0" />
-              ),
+              TableRow: (props: any) => {
+                const item = props.item; // virtuso passes item to TableRow if components.TableRow is used
+                let bgClass = "hover:bg-gray-50";
+                if (item) {
+                  if (item.units === 0) bgClass = "bg-red-50 hover:bg-red-100/50";
+                  else if (item.units > 0 && item.units <= 2) bgClass = "bg-orange-50/50 hover:bg-orange-50";
+                }
+                return <tr {...props} className={`${bgClass} border-b border-gray-100 last:border-0`} />;
+              },
               TableBody: React.forwardRef((props, ref) => (
                 <tbody {...props} ref={ref} className="divide-y divide-gray-200" />
               )),
@@ -298,8 +304,10 @@ const Inventory = () => {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-center font-medium">
-                  {product.units}
+                <td className="px-6 py-4 text-center">
+                  <span className={`inline-flex items-center justify-center min-w-[3rem] px-2.5 py-1 rounded-full text-xs font-bold shadow-sm border ${product.units === 0 ? 'bg-red-100 text-red-700 border-red-200' : (product.units > 0 && product.units <= 2) ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-white text-slate-700 border-slate-200'}`}>
+                    {product.units}
+                  </span>
                 </td>
                 <td className="px-6 py-4 text-right text-emerald-600 font-medium">
                   Bs. {(product.sellingPrice || 0).toFixed(2)}
@@ -349,8 +357,13 @@ const Inventory = () => {
           <Virtuoso
             useWindowScroll
             data={filteredProducts}
-            itemContent={(_, product) => (
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 mb-4">
+            itemContent={(_, product) => {
+              let bgClass = "bg-white";
+              if (product.units === 0) bgClass = "bg-red-50";
+              else if (product.units > 0 && product.units <= 2) bgClass = "bg-orange-50/50";
+
+              return (
+              <div className={`${bgClass} p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 mb-4`}>
                 <div className="flex gap-3">
                   <div className="h-16 w-16 shrink-0 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-100">
                     {product.image ? (
@@ -362,7 +375,7 @@ const Inventory = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start gap-2">
                       <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
-                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${product.units < 5 ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${product.units === 0 ? 'bg-red-100 text-red-700 border-red-200' : (product.units > 0 && product.units <= 2) ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
                         {product.units} ud.
                       </span>
                     </div>
@@ -403,7 +416,7 @@ const Inventory = () => {
                   </div>
                 )}
               </div>
-            )}
+            )}}
           />
         )}
       </div>
