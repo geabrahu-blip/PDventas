@@ -69,8 +69,18 @@ const SalesReport = () => {
   };
 
   const totalSalesAmount = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalCashSales = filteredSales.reduce((sum, sale) => sale.paymentMethod === 'Cash' ? sum + sale.total : sum, 0);
-  const totalQRSales = filteredSales.reduce((sum, sale) => sale.paymentMethod === 'QR' ? sum + sale.total : sum, 0);
+
+  const totalCashSales = filteredSales.reduce((sum, sale) => {
+    if (sale.paymentMethod === 'Cash') return sum + sale.total;
+    if (sale.paymentMethod === 'Mixto' && sale.amountCash) return sum + sale.amountCash;
+    return sum;
+  }, 0);
+
+  const totalQRSales = filteredSales.reduce((sum, sale) => {
+    if (sale.paymentMethod === 'QR') return sum + sale.total;
+    if (sale.paymentMethod === 'Mixto' && sale.amountQR) return sum + sale.amountQR;
+    return sum;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -187,11 +197,20 @@ const SalesReport = () => {
                     </ul>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      sale.paymentMethod === 'QR' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {sale.paymentMethod}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        sale.paymentMethod === 'QR' ? 'bg-purple-100 text-purple-800' :
+                        sale.paymentMethod === 'Mixto' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {sale.paymentMethod}
+                      </span>
+                      {sale.paymentMethod === 'Mixto' && (
+                        <div className="text-[10px] text-gray-500 whitespace-nowrap">
+                          EF: {sale.amountCash} | QR: {sale.amountQR}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-teal-600">
                     Bs. {(sale.total || 0).toFixed(2)}

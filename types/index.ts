@@ -111,7 +111,9 @@ export interface Sale {
   total: number; // subtotal minus discount
   globalDiscount?: number; // amount of discount applied to the total
   discount?: number; // Alias for globalDiscount used for legacy compat or strict mapping
-  paymentMethod: 'Cash' | 'QR';
+  paymentMethod: 'Cash' | 'QR' | 'Mixto';
+  amountCash?: number;
+  amountQR?: number;
   date: string;
 }
 
