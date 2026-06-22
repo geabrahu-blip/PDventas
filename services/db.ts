@@ -27,9 +27,11 @@ export const processPOSSale = async (
   subtotal: number,
   total: number,
   globalDiscount: number,
-  paymentMethod: 'Cash' | 'QR',
+  paymentMethod: 'Cash' | 'QR' | 'Mixto',
   userId?: string,
-  userName?: string
+  userName?: string,
+  amountCash?: number,
+  amountQR?: number
 ): Promise<void> => {
   const saleId = generateId();
   const saleRef = doc(db, 'sales', saleId);
@@ -87,6 +89,8 @@ export const processPOSSale = async (
       discount: globalDiscount, // Using alias as requested
       globalDiscount: globalDiscount,
       paymentMethod: paymentMethod,
+      amountCash: amountCash ?? null,
+      amountQR: amountQR ?? null,
       date: now.toISOString(),
       timestamp: now.getTime() // Useful for queries
     });

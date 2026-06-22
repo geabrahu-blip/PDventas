@@ -21,7 +21,9 @@ const POS = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientName, setClientName] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR'>('Cash');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR' | 'Mixto'>('Cash');
+  const [mixedAmountQR, setMixedAmountQR] = useState<number | ''>('');
+  const [mixedAmountCash, setMixedAmountCash] = useState<number | ''>('');
   const [globalDiscount, setGlobalDiscount] = useState<number | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'catalog' | 'cart'>('catalog');
@@ -100,6 +102,15 @@ const POS = () => {
       return;
     }
 
+    if (paymentMethod === 'Mixto') {
+      const qrAmt = Number(mixedAmountQR) || 0;
+      const cashAmt = Number(mixedAmountCash) || 0;
+      if (qrAmt + cashAmt !== total) {
+        showToast('La suma de los montos debe ser igual al total a pagar', 'error');
+        return;
+      }
+    }
+
     setIsProcessing(true);
     try {
       const saleItems = cart.map(item => ({
@@ -118,7 +129,9 @@ const POS = () => {
         Number(globalDiscount) || 0,
         paymentMethod,
         user?.id,
-        user?.name
+        user?.name,
+        paymentMethod === 'Mixto' ? Number(mixedAmountCash) || 0 : undefined,
+        paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
       );
 
       showToast('Venta procesada exitosamente', 'success');
@@ -141,6 +154,8 @@ const POS = () => {
       setClientName('');
       setGlobalDiscount('');
       setPaymentMethod('Cash');
+      setMixedAmountQR('');
+      setMixedAmountCash('');
       setSearchTerm('');
 
       // Refresh global inventory to reflect new stock
@@ -365,7 +380,7 @@ const POS = () => {
 
             <div>
               <label className="block text-[10px] lg:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 lg:mb-2">Método de Pago</label>
-              <div className="grid grid-cols-2 gap-2 lg:gap-3">
+              <div className="grid grid-cols-3 gap-2 lg:gap-3">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('Cash')}
@@ -390,8 +405,78 @@ const POS = () => {
                   <CreditCard className={`w-4 h-4 lg:w-6 lg:h-6 ${paymentMethod === 'QR' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   <span>QR / Transf.</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('Mixto')}
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-2 py-2 lg:py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
+                    paymentMethod === 'Mixto'
+                      ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
+                      : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex -space-x-1">
+                    <Banknote className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'Mixto' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                    <CreditCard className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'Mixto' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                  </div>
+                  <span>Mixto</span>
+                </button>
               </div>
             </div>
+
+            {paymentMethod === 'Mixto' && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Monto en QR</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={mixedAmountQR}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setMixedAmountQR(val ? Number(val) : '');
+                      if (val) {
+                        const newQR = Number(val);
+                        if (newQR <= total) {
+                          setMixedAmountCash(Number((total - newQR).toFixed(2)));
+                        } else {
+                          setMixedAmountCash(0);
+                        }
+                      } else {
+                        setMixedAmountCash(total);
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Monto Efectivo</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={mixedAmountCash}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setMixedAmountCash(val ? Number(val) : '');
+                      if (val) {
+                        const newCash = Number(val);
+                        if (newCash <= total) {
+                          setMixedAmountQR(Number((total - newCash).toFixed(2)));
+                        } else {
+                          setMixedAmountQR(0);
+                        }
+                      } else {
+                        setMixedAmountQR(total);
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="pt-4 space-y-3">
