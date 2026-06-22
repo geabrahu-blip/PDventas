@@ -4,6 +4,9 @@ export interface PrintSaleData {
   discount: number;
   total: number;
   date?: Date;
+  paymentMethod?: 'Cash' | 'QR' | 'Mixto';
+  amountCash?: number;
+  amountQR?: number;
 }
 
 export const printReceipt = (saleData: PrintSaleData) => {
@@ -73,6 +76,26 @@ export const printReceipt = (saleData: PrintSaleData) => {
           <span>TOTAL:</span>
           <span>Bs. ${saleData.total.toFixed(2)}</span>
         </div>
+
+        ${saleData.paymentMethod ? `
+        <div class="divider"></div>
+        ${saleData.paymentMethod === 'Mixto' ? `
+          <div class="flex-between">
+            <span>Pago en Efectivo:</span>
+            <span>Bs. ${(saleData.amountCash || 0).toFixed(2)}</span>
+          </div>
+          <div class="flex-between">
+            <span>Pago con QR:</span>
+            <span>Bs. ${(saleData.amountQR || 0).toFixed(2)}</span>
+          </div>
+        ` : `
+          <div class="flex-between">
+            <span>Método de pago:</span>
+            <span>${saleData.paymentMethod === 'QR' ? 'QR/Transf.' : 'Efectivo'}</span>
+          </div>
+        `}
+        ` : ''}
+
           <div class="divider"></div>
           <div class="center">¡Gracias por tu compra!</div>
           <div style="height: 30px;"></div>

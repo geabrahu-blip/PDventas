@@ -146,7 +146,10 @@ const POS = () => {
         subtotal,
         discount: Number(globalDiscount) || 0,
         total,
-        date: new Date()
+        date: new Date(),
+        paymentMethod,
+        amountCash: paymentMethod === 'Mixto' ? Number(mixedAmountCash) || 0 : undefined,
+        amountQR: paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
       });
 
       // Reset POS state
