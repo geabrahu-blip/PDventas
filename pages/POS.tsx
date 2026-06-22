@@ -308,9 +308,9 @@ const POS = () => {
 
       {/* Right Panel: Cart & Checkout */}
       <div className={`${activeTab === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-1/3 flex-col h-full bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200 overflow-y-auto lg:overflow-hidden pb-28 lg:pb-0`}>
-        <div className="hidden lg:flex p-5 border-b border-slate-100 items-center justify-between shrink-0">
-          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-cyan-500" />
+        <div className="hidden lg:flex p-5 lg:p-3 border-b border-slate-100 items-center justify-between shrink-0">
+          <h2 className="text-lg lg:text-base font-semibold text-slate-800 flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5 lg:w-4 lg:h-4 text-cyan-500" />
             Venta Actual
           </h2>
           <span className="bg-cyan-50 text-cyan-700 border border-cyan-100 px-2.5 py-1 rounded-full text-xs font-medium">
@@ -319,7 +319,7 @@ const POS = () => {
         </div>
 
         {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto min-h-0 border-b border-slate-100 mb-2 p-3 lg:p-5 space-y-3 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto min-h-0 border-b border-slate-100 mb-2 lg:mb-0 p-3 lg:p-3 space-y-3 lg:space-y-2 bg-slate-50/30">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
@@ -367,59 +367,59 @@ const POS = () => {
         </div>
 
         {/* Checkout Section */}
-        <div className="p-3 lg:p-5 bg-white space-y-3 lg:space-y-5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10 shrink-0">
+        <div className="p-3 lg:p-4 bg-white space-y-3 lg:space-y-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10 shrink-0">
 
-          <div className="space-y-3 lg:space-y-4">
+          <div className="space-y-3 lg:space-y-3">
             <div>
-              <label className="block text-[10px] lg:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 lg:mb-2">Cliente (Opcional)</label>
+              <label className="block text-[10px] lg:text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Cliente (Opcional)</label>
               <input
                 type="text"
                 placeholder="Cliente Ocasional"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                className="w-full px-3 py-2 lg:px-4 lg:py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500 transition-colors bg-slate-50 focus:bg-white"
+                className="w-full px-3 py-2 lg:px-3 lg:py-1.5 text-sm border border-slate-200 rounded-xl lg:rounded-lg focus:ring-cyan-500 focus:border-cyan-500 transition-colors bg-slate-50 focus:bg-white"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] lg:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 lg:mb-2">Método de Pago</label>
-              <div className="grid grid-cols-3 gap-2 lg:gap-3">
+              <label className="block text-[10px] lg:text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Método de Pago</label>
+              <div className="grid grid-cols-3 gap-2 lg:gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('Cash')}
-                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-2 py-2 lg:py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-1 py-2 lg:py-2 px-2 text-sm lg:text-xs font-medium border-2 lg:border rounded-xl lg:rounded-lg transition-all ${
                     paymentMethod === 'Cash'
                       ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
                       : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  <Banknote className={`w-4 h-4 lg:w-6 lg:h-6 ${paymentMethod === 'Cash' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                  <Banknote className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'Cash' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   <span>Efectivo</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('QR')}
-                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-2 py-2 lg:py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-1 py-2 lg:py-2 px-2 text-sm lg:text-xs font-medium border-2 lg:border rounded-xl lg:rounded-lg transition-all ${
                     paymentMethod === 'QR'
                       ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
                       : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  <CreditCard className={`w-4 h-4 lg:w-6 lg:h-6 ${paymentMethod === 'QR' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                  <CreditCard className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'QR' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   <span>QR / Transf.</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('Mixto')}
-                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-2 py-2 lg:py-3 px-2 text-sm font-medium border-2 rounded-xl transition-all ${
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-1 py-2 lg:py-2 px-2 text-sm lg:text-xs font-medium border-2 lg:border rounded-xl lg:rounded-lg transition-all ${
                     paymentMethod === 'Mixto'
                       ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
                       : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex -space-x-1">
-                    <Banknote className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'Mixto' ? 'text-cyan-500' : 'text-slate-400'}`} />
-                    <CreditCard className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'Mixto' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                    <Banknote className={`w-4 h-4 lg:w-4 lg:h-4 ${paymentMethod === 'Mixto' ? 'text-cyan-500' : 'text-slate-400'}`} />
+                    <CreditCard className={`w-4 h-4 lg:w-4 lg:h-4 ${paymentMethod === 'Mixto' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   </div>
                   <span>Mixto</span>
                 </button>
@@ -482,13 +482,13 @@ const POS = () => {
             )}
           </div>
 
-          <div className="pt-4 space-y-3">
-            <div className="flex justify-between items-center text-slate-500">
+          <div className="pt-3 lg:pt-2 space-y-3 lg:space-y-2">
+            <div className="flex justify-between items-center text-slate-500 text-sm lg:text-xs">
               <span className="font-medium">Subtotal</span>
               <span className="font-semibold text-slate-700">Bs. {subtotal.toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between items-center text-slate-500">
+            <div className="flex justify-between items-center text-slate-500 text-sm lg:text-xs">
               <span className="font-medium">Descuento Global (Bs):</span>
               <input
                 type="number"
@@ -502,15 +502,15 @@ const POS = () => {
             </div>
 
             <div className="flex justify-between items-end pt-2 border-t border-slate-100">
-              <span className="text-slate-500 font-medium">Total a Pagar</span>
-              <span className="text-3xl font-bold text-slate-900 tracking-tight">Bs. {total.toFixed(2)}</span>
+              <span className="text-slate-500 font-medium text-sm lg:text-xs">Total a Pagar</span>
+              <span className="text-3xl lg:text-2xl font-bold text-slate-900 tracking-tight">Bs. {total.toFixed(2)}</span>
             </div>
           </div>
 
           <button
             onClick={handleProcessSale}
             disabled={cart.length === 0 || isProcessing}
-            className="w-full py-4 bg-cyan-500 text-white rounded-xl font-bold text-base hover:bg-cyan-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-[0_4px_14px_0_rgba(6,182,212,0.39)] hover:shadow-[0_6px_20px_rgba(6,182,212,0.23)] disabled:shadow-none active:scale-[0.98]"
+            className="w-full py-4 lg:py-3 bg-cyan-500 text-white rounded-xl font-bold text-base lg:text-sm hover:bg-cyan-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-[0_4px_14px_0_rgba(6,182,212,0.39)] hover:shadow-[0_6px_20px_rgba(6,182,212,0.23)] disabled:shadow-none active:scale-[0.98]"
           >
             {isProcessing ? (
               <span className="animate-pulse flex items-center gap-2">
