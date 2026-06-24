@@ -404,9 +404,22 @@ export const updateInventoryItem = async (item: InventoryItem): Promise<Inventor
 };
 
 export const deleteInventoryItem = async (id: string): Promise<void> => {
-  await deleteDoc(doc(db, 'inventory', id));
+  // Try to find the inventory item to get the productId before deleting
+  const invDocRef = doc(db, 'inventory', id);
+  const invDocSnap = await getDoc(invDocRef);
+  let originalProductId = null;
+  if (invDocSnap.exists()) {
+    originalProductId = invDocSnap.data().productId;
+  }
+
+  await deleteDoc(invDocRef);
   // We need the item to sync deletion, but if we don't have it, we just attempt to delete the public_catalog record by id
   await deleteDoc(doc(db, 'public_catalog', id));
+
+  // Also delete from products collection if we found the original id
+  if (originalProductId) {
+    await deleteDoc(doc(db, 'products', originalProductId));
+  }
 };
 
 export const syncOldProductsToInventory = async (): Promise<void> => {
