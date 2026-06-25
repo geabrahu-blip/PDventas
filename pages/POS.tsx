@@ -233,7 +233,7 @@ const POS = () => {
                 style={{ height: '100%', width: '100%' }}
                 totalCount={filteredProducts.length}
                 listClassName="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 pb-10"
-                itemClassName="flex"
+                itemClassName="flex flex-col h-full"
                 itemContent={(index) => {
                   const product = filteredProducts[index];
                   const inCartItem = cart.find(c => c.product.id === product.id);
@@ -245,7 +245,7 @@ const POS = () => {
                     <div
                       key={product.id}
                       onClick={() => !isOutOfStockForCart && addToCart(product)}
-                      className={`w-full bg-white border rounded-2xl overflow-hidden transition-all duration-300 flex flex-col cursor-pointer group
+                      className={`h-full w-full bg-white border rounded-2xl overflow-hidden transition-all duration-300 flex flex-col cursor-pointer group
                         ${isOutOfStockForCart ? 'opacity-60 grayscale border-slate-200' : 'border-slate-100 hover:border-cyan-200 hover:shadow-md'}
                       `}
                     >
