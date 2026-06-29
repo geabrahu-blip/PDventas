@@ -18,33 +18,20 @@ const SalesReport = () => {
   // Filters
   const [filterDate, setFilterDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
-  const applyFilters = useCallback(() => {
-    let result = sales;
-
-    if (filterDate) {
-      result = result.filter(sale => sale.date.startsWith(filterDate));
-    }
-
-    setFilteredSales(result);
-  }, [sales, filterDate]);
-
   const loadData = useCallback(async () => {
     try {
-      const salesData = await getSales();
+      const salesData = await getSales(filterDate || undefined);
       setSales(salesData);
+      setFilteredSales(salesData); // We no longer need applyFilters since the query is already filtered
     } catch (error) {
       console.error('Error loading sales:', error);
       showToast('Error al cargar ventas', 'error');
     }
-  }, [showToast]);
+  }, [showToast, filterDate]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
 
   const handleDeleteClick = (sale: Sale) => {
     setSaleToDelete(sale);

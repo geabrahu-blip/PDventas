@@ -627,8 +627,22 @@ export const processBulkTransfer = async (
 };
 
 // Sales
-export const getSales = async (): Promise<Sale[]> => {
-  const q = query(collection(db, 'sales'));
+export const getSales = async (dateStr?: string): Promise<Sale[]> => {
+  let q;
+  if (dateStr) {
+    // Because date is stored as an ISO string (e.g., "2023-10-25T14:30:00.000Z"),
+    // we can query string fields starting with the given date prefix
+    const startDate = dateStr;
+    const endDate = dateStr + '\uf8ff';
+    q = query(
+      collection(db, 'sales'),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate)
+    );
+  } else {
+    q = query(collection(db, 'sales'));
+  }
+
   const querySnapshot = await getDocs(q);
   // Fix: explicitly inject the document ID into the returned object
   const sales = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Sale));
