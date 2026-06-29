@@ -15,6 +15,9 @@ jobs:
           npm install
           npm run build
           
+      - name: Dynamic Cache Busting
+        run: echo "Deploy ID ${{ github.run_id }} - Commit ${{ github.sha }}" > dist/deploy-id.txt
+
       - name: Desplegar a Firebase Hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
