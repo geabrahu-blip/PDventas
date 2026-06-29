@@ -18,7 +18,7 @@ const Inventory = () => {
   const [products, setProducts] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const lastDocRef = React.useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -28,11 +28,12 @@ const Inventory = () => {
         setIsLoading(true);
         setProducts([]);
         setHasMore(true);
+        lastDocRef.current = null;
       } else {
         setIsLoadingMore(true);
       }
 
-      const currentLastDoc = reset ? null : lastDoc;
+      const currentLastDoc = reset ? null : lastDocRef.current;
       const result = await getPaginatedInventoryItems(currentLastDoc, 20);
 
       setProducts(prev => {
@@ -46,7 +47,7 @@ const Inventory = () => {
         });
       });
 
-      setLastDoc(result.lastDoc);
+      lastDocRef.current = result.lastDoc;
       setHasMore(result.items.length === 20);
     } catch (error) {
       console.error("Error loading inventory:", error);
@@ -55,7 +56,7 @@ const Inventory = () => {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [lastDoc, showToast]);
+  }, [showToast]);
 
   useEffect(() => { fetchInventory(true); }, [fetchInventory]);
 

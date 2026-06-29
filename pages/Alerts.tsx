@@ -1,8 +1,30 @@
-import { useInventory } from "../context/InventoryContext";
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, PackageX, PackageMinus, Package } from "lucide-react";
+import { getInventoryItems } from "../services/db";
+import { InventoryItem } from "../types";
 
 export default function Alerts() {
-  const { inventory: items, isLoading: loading } = useInventory();
+  const [loading, setLoading] = useState(true);
+  const [outOfStock, setOutOfStock] = useState<InventoryItem[]>([]);
+  const [lowStock, setLowStock] = useState<InventoryItem[]>([]);
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const items = await getInventoryItems();
+        // Safe check
+        const products = items || [];
+        setOutOfStock(products.filter((item) => item.units === 0));
+        setLowStock(products.filter((item) => item.units > 0 && item.units <= 2));
+      } catch (error) {
+        console.error("Error fetching alerts data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlerts();
+  }, []);
 
   if (loading) {
     return (
@@ -11,11 +33,6 @@ export default function Alerts() {
       </div>
     );
   }
-
-  // Safe check
-  const products = items || [];
-  const outOfStock = products.filter((item) => item.units === 0);
-  const lowStock = products.filter((item) => item.units > 0 && item.units <= 2);
 
   return (
     <div className="space-y-6">
