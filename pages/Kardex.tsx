@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { KardexLog } from '../types';
-import { getKardexLogs } from '../services/db';
-import { useInventory } from '../context/InventoryContext';
+import { getKardexLogs, getInventoryItems } from '../services/db';
 import { Activity, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
 const Kardex = () => {
   const [logs, setLogs] = useState<KardexLog[]>([]);
+  const [inventoryMap, setInventoryMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { inventory } = useInventory(); // To map productId to product name
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchLogsAndProducts = async () => {
       try {
-        const fetchedLogs = await getKardexLogs();
+        const [fetchedLogs, fetchedInventory] = await Promise.all([
+          getKardexLogs(),
+          getInventoryItems()
+        ]);
+
+        const map: Record<string, string> = {};
+        fetchedInventory.forEach(item => {
+          map[item.id] = item.name;
+        });
+
+        setInventoryMap(map);
         setLogs(fetchedLogs);
       } catch (error) {
         console.error("Error fetching Kardex logs:", error);
@@ -21,12 +30,11 @@ const Kardex = () => {
       }
     };
 
-    fetchLogs();
+    fetchLogsAndProducts();
   }, []);
 
   const getProductName = (productId: string) => {
-    const product = inventory.find(p => p.id === productId);
-    return product ? product.name : 'Producto Desconocido';
+    return inventoryMap[productId] || 'Producto Desconocido';
   };
 
   if (isLoading) {
