@@ -20,5 +20,10 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-service-account.json
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
+          echo "Longitud del secreto FIREBASE_SERVICE_ACCOUNT: ${#FIREBASE_SERVICE_ACCOUNT}"
           echo "$FIREBASE_SERVICE_ACCOUNT" > $GOOGLE_APPLICATION_CREDENTIALS
+          echo "Tamaño del archivo generado:"
+          ls -l $GOOGLE_APPLICATION_CREDENTIALS
+          echo "Validando JSON (si es válido no mostrará error, si es inválido fallará):"
+          jq empty $GOOGLE_APPLICATION_CREDENTIALS || echo "El archivo no es un JSON válido"
           npx firebase-tools@15.22.1 deploy --only hosting
