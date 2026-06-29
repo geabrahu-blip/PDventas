@@ -16,6 +16,6 @@ jobs:
           npm run build
           
       - name: Desplegar a Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --project pieldivina-8e167
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx firebase-tools deploy --only hosting --project pieldivina-8e167 --non-interactive
