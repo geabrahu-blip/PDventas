@@ -12,8 +12,6 @@ import Users from './pages/Users';
 import Alerts from './pages/Alerts';
 
 function App() {
-  console.log("🚀 Piel Divina POS - Despliegue forzado: ", new Date().toISOString());
-
   return (
     <AuthProvider>
       <ToastProvider>
