@@ -1,4 +1,4 @@
-﻿name: Despliegue a Firebase
+name: Despliegue a Firebase
 on:
   push:
     branches:
@@ -15,5 +15,10 @@ jobs:
           npm install
           npm run build
           
-      - name: Desplegar a Firebase
-        run: npx firebase-tools@15.22.1 deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
+      - name: Autenticar y Desplegar a Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > $GOOGLE_APPLICATION_CREDENTIALS
+          npx firebase-tools@15.22.1 deploy --only hosting
