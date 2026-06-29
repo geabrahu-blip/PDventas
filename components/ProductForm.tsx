@@ -4,6 +4,7 @@ import { Image as ImageIcon, Plus, Save, X, Search } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { useToast } from '../context/ToastContext';
 import { useInventory } from '../context/InventoryContext';
+import { searchInventoryItems } from '../services/db';
 
 interface ProductFormProps {
   onAdd: (product: Omit<Product, 'id'>) => void;
@@ -210,10 +211,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     ? (Number(priceBs) * Number(units)).toFixed(2)
     : '0.00';
 
-  const filteredProducts = globalProducts.filter(p =>
-    p.name.toLowerCase().includes(name.toLowerCase()) ||
-    (p.barcode && p.barcode.toLowerCase().includes(name.toLowerCase()))
-  ).slice(0, 5); // Limit to top 5 results
+  const filteredProducts = globalProducts.slice(0, 5); // Limit to top 5 results
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-none md:rounded-2xl border-0 md:border border-gray-200 p-4 md:p-6 space-y-6 relative min-h-screen md:min-h-0">

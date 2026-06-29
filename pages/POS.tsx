@@ -1,6 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { useInventory } from '../context/InventoryContext';
+import { getPaginatedInventoryItems, searchInventoryItems } from '../services/db';
+import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { processPOSSale } from '../services/db';
@@ -14,7 +16,75 @@ interface CartItem {
 }
 
 const POS = () => {
-  const { inventory, refreshInventory } = useInventory();
+  // const { inventory, refreshInventory } = useInventory(); // Removed direct context load
+  const [products, setProducts] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const fetchInventory = useCallback(async (reset: boolean = false) => {
+    try {
+      if (reset) {
+        setIsLoading(true);
+        setProducts([]);
+        setHasMore(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      const currentLastDoc = reset ? null : lastDoc;
+      const result = await getPaginatedInventoryItems(currentLastDoc, 20);
+
+      setProducts(prev => {
+        const newProducts = reset ? result.items : [...prev, ...result.items];
+        const seen = new Set();
+        return newProducts.filter(p => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+      });
+
+      setLastDoc(result.lastDoc);
+      setHasMore(result.items.length === 20);
+    } catch (error) {
+      console.error("Error loading inventory:", error);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [lastDoc]);
+
+  useEffect(() => { fetchInventory(true); }, [fetchInventory]);
+
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setIsSearching(false);
+      fetchInventory(true);
+      return;
+    }
+
+    setIsSearching(true);
+    setIsLoading(true);
+    try {
+      const results = await searchInventoryItems(term);
+      setProducts(results);
+      setHasMore(false);
+    } catch (error) {
+      console.error("Search error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore && !isSearching) {
+      fetchInventory(false);
+    }
+  };
   const { showToast } = useToast();
   const { user } = useAuth();
 
@@ -30,15 +100,9 @@ const POS = () => {
 
   // Filter products for the catalog
   const filteredProducts = useMemo(() => {
-    if (!inventory) return [];
-    const searchLower = searchTerm.toLowerCase();
-    return inventory.filter(p =>
-      p.units > 0 && // Only show products with stock
-      (p.name.toLowerCase().includes(searchLower) ||
-       (p.barcode && p.barcode.toLowerCase().includes(searchLower)) ||
-       (p.brand && p.brand.toLowerCase().includes(searchLower)))
-    );
-  }, [inventory, searchTerm]);
+    // Only show products with stock. Search filtering is already handled on the server/db layer now.
+    return products.filter(p => p.units > 0);
+  }, [products]);
 
   // Derived calculations
   const totalItems = useMemo(() => {
@@ -162,7 +226,7 @@ const POS = () => {
       setSearchTerm('');
 
       // Refresh global inventory to reflect new stock
-      await refreshInventory();
+      fetchInventory(true);
 
     } catch (error: any) {
       console.error("Error processing sale:", error);
@@ -215,7 +279,7 @@ const POS = () => {
               type="text"
               placeholder="Buscar esencia, crema..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500 bg-slate-50 transition-colors"
             />
           </div>
@@ -234,6 +298,7 @@ const POS = () => {
                 totalCount={filteredProducts.length}
                 listClassName="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 pb-10"
                 itemClassName="flex flex-col h-full"
+                endReached={handleLoadMore}
                 itemContent={(index) => {
                   const product = filteredProducts[index];
                   const inCartItem = cart.find(c => c.product.id === product.id);
