@@ -277,6 +277,55 @@ export const deleteProduct = async (id: string): Promise<void> => {
 };
 
 // Inventory Items
+
+export interface PaginatedInventoryResult {
+  items: InventoryItem[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+}
+
+export const getPaginatedInventoryItems = async (
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null = null,
+  limitCount: number = 20
+): Promise<PaginatedInventoryResult> => {
+
+  const constraints: any[] = [];
+
+  // Ordering by name requires an index in Firestore if combined with other things, but simple order is fine.
+  constraints.push(orderBy('name'));
+  constraints.push(limit(limitCount));
+
+  if (lastDoc) {
+    constraints.push(startAfter(lastDoc));
+  }
+
+  const finalQ = query(collection(db, 'inventory'), ...constraints);
+
+  const querySnapshot = await getDocs(finalQ);
+  const items = querySnapshot.docs.map(doc => doc.data() as InventoryItem);
+
+  return {
+    items,
+    lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
+  };
+};
+
+export const searchInventoryItems = async (searchTerm: string): Promise<InventoryItem[]> => {
+  const searchLower = searchTerm.toLowerCase();
+
+  // NOTE: This will still fetch all items but ONLY when searching.
+  // A better approach for search in firestore is a specific field query, but since it's "contains" search
+  // we must filter client-side. We limit the number of results to 50 to avoid crashing the UI.
+  const q = query(collection(db, 'inventory'));
+  const querySnapshot = await getDocs(q);
+  const allItems = querySnapshot.docs.map(doc => doc.data() as InventoryItem);
+
+  return allItems.filter(p =>
+    p.name.toLowerCase().includes(searchLower) ||
+    (p.barcode && p.barcode.toLowerCase().includes(searchLower)) ||
+    (p.brand && p.brand.toLowerCase().includes(searchLower))
+  ).slice(0, 50); // limit search results
+};
+
 export const getInventoryItems = async (): Promise<InventoryItem[]> => {
   const q = query(collection(db, 'inventory'));
   const querySnapshot = await getDocs(q);
@@ -384,9 +433,9 @@ export const getPublicInventoryItems = async (
     constraints.push(startAfter(lastDoc));
   }
 
-  q = query(collection(db, 'public_catalog'), ...constraints);
+  const finalQPublic = query(collection(db, 'public_catalog'), ...constraints);
 
-  const querySnapshot = await getDocs(q);
+  const querySnapshot = await getDocs(finalQPublic);
 
   const items = querySnapshot.docs.map(doc => doc.data() as PublicCatalogItem);
 
@@ -646,10 +695,25 @@ export const deleteSale = async (id: string): Promise<void> => {
   if (!docSnap.exists()) return;
   const sale = docSnap.data() as Sale;
 
-  // Restore inventory items
-  const allInventory = await getInventoryItems();
+  // Restore inventory items by querying individual products
   for (const item of sale.items) {
-    const invItem = allInventory.find(inv => inv.id === item.productId || inv.productId === item.productId && inv.storeId === sale.storeId);
+    // Attempt to find by ID directly first
+    const invItemSnap = await getDoc(doc(db, 'inventory', item.productId));
+    let invItem = invItemSnap.exists() ? (invItemSnap.data() as InventoryItem) : null;
+
+    // If not found by ID, query by productId and storeId
+    if (!invItem) {
+      const q = query(
+        collection(db, 'inventory'),
+        where('productId', '==', item.productId),
+        where('storeId', '==', sale.storeId)
+      );
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        invItem = qSnap.docs[0].data() as InventoryItem;
+      }
+    }
+
     if (invItem) {
       await updateInventoryItem({
         ...invItem,

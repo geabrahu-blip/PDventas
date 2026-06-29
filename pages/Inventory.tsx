@@ -1,8 +1,9 @@
 import ProductForm from "../components/ProductForm";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
-import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
+import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getPaginatedInventoryItems, searchInventoryItems } from '../services/db';
+import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
@@ -12,11 +13,85 @@ import ConfirmModal from '../components/ConfirmModal';
 const Inventory = () => {
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
-  const { inventory: rawProducts, isLoading, refreshInventory, updateLocalInventoryItem, removeLocalInventoryItem } = useInventory();
+  const { updateLocalInventoryItem, removeLocalInventoryItem } = useInventory();
+
+  const [products, setProducts] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const fetchInventory = useCallback(async (reset: boolean = false) => {
+    try {
+      if (reset) {
+        setIsLoading(true);
+        setProducts([]);
+        setHasMore(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      const currentLastDoc = reset ? null : lastDoc;
+      const result = await getPaginatedInventoryItems(currentLastDoc, 20);
+
+      setProducts(prev => {
+        const newProducts = reset ? result.items : [...prev, ...result.items];
+        // simple dedup by id just in case
+        const seen = new Set();
+        return newProducts.filter(p => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+      });
+
+      setLastDoc(result.lastDoc);
+      setHasMore(result.items.length === 20);
+    } catch (error) {
+      console.error("Error loading inventory:", error);
+      showToast("Error al cargar el inventario", "error");
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [lastDoc, showToast]);
+
+  useEffect(() => { fetchInventory(true); }, [fetchInventory]);
+
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setIsSearching(false);
+      fetchInventory(true);
+      return;
+    }
+
+    setIsSearching(true);
+    setIsLoading(true);
+    try {
+      const results = await searchInventoryItems(term);
+      setProducts(results);
+      setHasMore(false); // Disable pagination during search
+    } catch (error) {
+      console.error("Search error:", error);
+      showToast("Error en la búsqueda", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore && !isSearching) {
+      fetchInventory(false);
+    }
+  };
+
+  const refreshInventoryLocal = () => fetchInventory(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Safe default to prevent length/map crashes on completely undefined inventory
-  const products = rawProducts || [];
+  // const products managed locally now
   const [searchTerm, setSearchTerm] = useState('');
 
   // Edit State
@@ -144,13 +219,8 @@ const Inventory = () => {
   const safeToLower = (val: any) => (val ? String(val).toLowerCase() : '');
   const searchLower = safeToLower(searchTerm);
 
-  const filteredProducts = (products || []).filter(p =>
-    safeToLower(p?.name).includes(searchLower) ||
-    safeToLower(p?.barcode).includes(searchLower) ||
-    safeToLower(p?.brand).includes(searchLower) ||
-    safeToLower(p?.category).includes(searchLower) ||
-    safeToLower(p?.gender).includes(searchLower)
-  );
+  // Search is now server-side or handled by the search function, so filteredProducts is just products
+  const filteredProducts = products;
 
 
   return (
@@ -217,7 +287,7 @@ const Inventory = () => {
             onAdd={async (product) => {
               try {
                 await addProduct(product as any); // Type assertion needed due to Product vs Omit<Product, 'id'> matching
-                await refreshInventory();
+                await refreshInventoryLocal();
                 showToast('Producto añadido al inventario exitosamente', 'success');
                 setIsAddProductOpen(false);
               } catch (e: any) {
@@ -238,7 +308,7 @@ const Inventory = () => {
             type="text"
             placeholder="Buscar por código, nombre, marca..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
@@ -254,6 +324,7 @@ const Inventory = () => {
           <TableVirtuoso
             style={{ height: '100%' }}
             data={filteredProducts}
+            endReached={handleLoadMore}
             components={{
               Table: ({ style, ...props }) => (
                 <table {...props} style={{ ...style, width: '100%', textAlign: 'left', fontSize: '0.875rem' }} className="min-w-full" />

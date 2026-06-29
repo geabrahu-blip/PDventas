@@ -18,15 +18,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const invData = await getInventoryItems();
-      setInventory(invData);
-    } catch (error) {
-      console.error("Error loading global inventory:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    // Intentionally skipped to avoid loading all inventory items into memory on startup.
+    // Individual pages (POS, Inventory) will fetch their own paginated data.
+    // Context is now only used for caching/local updates if needed, though mostly obsolete.
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -34,7 +29,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshInventory = async () => {
-    await loadData();
+    // No-op for global refresh
   };
 
   const updateLocalInventoryItem = (updatedItem: InventoryItem) => {
