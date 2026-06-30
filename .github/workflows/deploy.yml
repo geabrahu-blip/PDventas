@@ -18,11 +18,23 @@ jobs:
       - name: Dynamic Cache Busting
         run: echo "Deploy ID ${{ github.run_id }} - Commit ${{ github.sha }}" > dist/deploy-id.txt
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          projectId: pieldivina-8e167
-          channelId: live
-          firebaseToolsVersion: '13.7.0'
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+
+      - name: Deploy to Firebase Hosting (Ignoring double-release bug)
+        run: |
+          set +e
+          npx firebase-tools deploy --only hosting --project pieldivina-8e167 --non-interactive > deploy_log.txt 2>&1
+          EXIT_CODE=$?
+          cat deploy_log.txt
+          if [ $EXIT_CODE -ne 0 ]; then
+            if grep -q "is the current active version" deploy_log.txt; then
+              echo "Ignoring known Firebase CLI double-release bug (HTTP 400). Deploy was successful!"
+              exit 0
+            else
+              echo "Deployment failed with a real error."
+              exit $EXIT_CODE
+            fi
+          fi
