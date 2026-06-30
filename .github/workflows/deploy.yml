@@ -18,7 +18,14 @@ jobs:
       - name: Dynamic Cache Busting
         run: echo "Deploy ID ${{ github.run_id }} - Commit ${{ github.sha }}" > dist/deploy-id.txt
 
+      - name: Create Service Account File
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > firebase-sa.json
+
       - name: Deploy to Firebase Hosting
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: firebase-sa.json
         run: npx firebase-tools@13.7.0 deploy --only hosting --project pieldivina-8e167 --non-interactive
+
+      - name: Clean up Service Account File
+        if: always()
+        run: rm -f firebase-sa.json
