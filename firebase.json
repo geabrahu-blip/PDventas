@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "pieldivina-8e167",
     "public": "dist",
     "ignore": [
       "firebase.json",
