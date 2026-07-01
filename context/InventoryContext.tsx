@@ -92,22 +92,27 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateLocalInventoryItem = (updatedItem: InventoryItem) => {
-    setInventory(prev => {
-      const exists = prev.find(item => item.id === updatedItem.id);
+    setInventory((prev = []) => {
+      const safePrev = prev || [];
+      const exists = safePrev.find(item => item.id === updatedItem.id);
       if (exists) {
-        return prev.map(item => item.id === updatedItem.id ? updatedItem : item);
+        return safePrev.map(item => item.id === updatedItem.id ? updatedItem : item);
       }
-      return [...prev, updatedItem];
+      return [...safePrev, updatedItem];
     });
   };
 
   const removeLocalInventoryItem = (id: string) => {
-    setInventory(prev => prev.filter(item => item.id !== id));
+    setInventory((prev = []) => {
+      const safePrev = prev || [];
+      return safePrev.filter(item => item.id !== id);
+    });
   };
 
   const updateMultipleLocalInventoryItems = (items: InventoryItem[]) => {
-    setInventory(prev => {
-      const newInventory = [...prev];
+    setInventory((prev = []) => {
+      const safePrev = prev || [];
+      const newInventory = [...safePrev];
       items.forEach(updatedItem => {
         const index = newInventory.findIndex(item => item.id === updatedItem.id);
         if (index !== -1) {
