@@ -118,6 +118,10 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (!file || e.target.files?.length === 0) {
+      return;
+    }
+
     if (file) {
       try {
         const options = {
