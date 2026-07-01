@@ -1,13 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
-import { useInventory } from '../context/InventoryContext';
 import { getPaginatedInventoryItems, searchInventoryItems } from '../services/db';
 import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { processPOSSale } from '../services/db';
 import { InventoryItem } from '../types';
-import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Package, Sparkles, Trash2 } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Sparkles, Trash2, Loader2 } from 'lucide-react';
 import { printReceipt } from '../utils/printReceipt';
 import { ProductCard } from '../components/ProductCard';
 
@@ -17,7 +16,6 @@ interface CartItem {
 }
 
 const POS = () => {
-  // const { inventory, refreshInventory } = useInventory(); // Removed direct context load
   const [products, setProducts] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -61,27 +59,6 @@ const POS = () => {
 
   useEffect(() => { fetchInventory(true); }, [fetchInventory]);
 
-  const handleSearch = async (term: string) => {
-    setSearchTerm(term);
-    if (term.trim() === '') {
-      setIsSearching(false);
-      fetchInventory(true);
-      return;
-    }
-
-    setIsSearching(true);
-    setIsLoading(true);
-    try {
-      const results = await searchInventoryItems(term);
-      setProducts(results);
-      setHasMore(false);
-    } catch (error) {
-      console.error("Search error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore && !isSearching) {
       fetchInventory(false);
@@ -90,9 +67,33 @@ const POS = () => {
   const { showToast } = useToast();
   const { user } = useAuth();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientName, setClientName] = useState('');
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (inputValue.trim() === '') {
+        setIsSearching(false);
+        fetchInventory(true);
+        return;
+      }
+
+      setIsSearching(true);
+      setIsLoading(true);
+      try {
+        const results = await searchInventoryItems(inputValue);
+        setProducts(results);
+        setHasMore(false);
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [inputValue, fetchInventory]);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR' | 'Mixto'>('Cash');
   const [mixedAmountQR, setMixedAmountQR] = useState<number | ''>('');
   const [mixedAmountCash, setMixedAmountCash] = useState<number | ''>('');
@@ -225,7 +226,7 @@ const POS = () => {
       setPaymentMethod('Cash');
       setMixedAmountQR('');
       setMixedAmountCash('');
-      setSearchTerm('');
+      setInputValue('');
 
       // Refresh global inventory to reflect new stock
       fetchInventory(true);
@@ -276,12 +277,16 @@ const POS = () => {
             Catálogo
           </h2>
           <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            {isSearching || isLoading ? (
+              <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-500 w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            )}
             <input
               type="text"
               placeholder="Buscar esencia, crema..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500 bg-slate-50 transition-colors"
             />
           </div>
