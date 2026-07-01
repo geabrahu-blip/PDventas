@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { KardexLog } from '../types';
-import { getKardexLogs, getInventoryItems } from '../services/db';
+import { getKardexLogs, getPaginatedInventoryItems } from '../services/db';
 import { Activity, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
@@ -62,7 +62,7 @@ const Kardex = () => {
       const [logsResponse, inventoryResponse] = await Promise.all([
         getKardexLogs(currentLastDoc, 50, startDate, endDate),
         // Solo obtener inventario si es la carga inicial (no en el botón 'cargar más')
-        isInitial ? getInventoryItems(null, 500) : Promise.resolve(null)
+        isInitial ? getPaginatedInventoryItems(null, 500) : Promise.resolve(null)
       ]);
 
       if (inventoryResponse) {
@@ -93,14 +93,21 @@ const Kardex = () => {
 
   useEffect(() => {
     // Cuando el componente monta o cambia el filtro, hacemos carga inicial
-    fetchLogs(true);
+    // Se usa un timer mínimo para evitar llamadas asíncronas bloqueantes dentro del render cycle (TDZ/cascade renders)
+    const timer = setTimeout(() => {
+      fetchLogs(true);
+    }, 0);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType]);
 
   // Trigger para filtro personalizado cuando el usuario cambia fechas de inicio/fin
   useEffect(() => {
     if (filterType === 'custom' && customStartDate && customEndDate) {
-      fetchLogs(true);
+      const timer = setTimeout(() => {
+        fetchLogs(true);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customStartDate, customEndDate]);
