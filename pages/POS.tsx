@@ -20,6 +20,7 @@ const POS = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const lastDocRef = React.useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const isFirstRender = React.useRef(true);
   const [hasMore, setHasMore] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -72,6 +73,10 @@ const POS = () => {
   const [clientName, setClientName] = useState('');
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const delayDebounceFn = setTimeout(async () => {
       if (inputValue.trim() === '') {
         setIsSearching(false);
