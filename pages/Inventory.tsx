@@ -105,7 +105,7 @@ const Inventory = () => {
       } finally {
         setIsLoading(false);
       }
-    }, 400);
+    }, 1500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [inputValue, fetchInventory, showToast]);
