@@ -332,10 +332,42 @@ export const getInventoryItems = async (): Promise<InventoryItem[]> => {
   return querySnapshot.docs.map(doc => doc.data() as InventoryItem);
 };
 
-export const getKardexLogs = async (): Promise<KardexLog[]> => {
-  const q = query(collection(db, 'kardex_logs'), orderBy('timestamp', 'desc'));
+export interface PaginatedKardexResult {
+  items: KardexLog[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+}
+
+export const getKardexLogs = async (
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null = null,
+  limitCount: number = 50,
+  startDate?: number,
+  endDate?: number
+): Promise<PaginatedKardexResult> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const constraints: any[] = [];
+
+  if (startDate !== undefined) {
+    constraints.push(where('timestamp', '>=', startDate));
+  }
+  if (endDate !== undefined) {
+    constraints.push(where('timestamp', '<=', endDate));
+  }
+
+  constraints.push(orderBy('timestamp', 'desc'));
+  constraints.push(limit(limitCount));
+
+  if (lastDoc) {
+    constraints.push(startAfter(lastDoc));
+  }
+
+  const q = query(collection(db, 'kardex_logs'), ...constraints);
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as KardexLog));
+  const items = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as KardexLog));
+
+  return {
+    items,
+    lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
+  };
 };
 
 export interface PaginatedResult {

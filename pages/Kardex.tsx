@@ -1,58 +1,166 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { KardexLog } from '../types';
 import { getKardexLogs, getInventoryItems } from '../services/db';
 import { Activity, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 const Kardex = () => {
   const [logs, setLogs] = useState<KardexLog[]>([]);
   const [inventoryMap, setInventoryMap] = useState<Record<string, string>>({});
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchLogsAndProducts = async () => {
-      try {
-        const [fetchedLogs, fetchedInventory] = await Promise.all([
-          getKardexLogs(),
-          getInventoryItems()
-        ]);
+  // Date filtering state
+  const [filterType, setFilterType] = useState('today');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
+  const getDateRange = useCallback((type: string, start?: string, end?: string): { startDate?: number, endDate?: number } => {
+    const now = new Date();
+
+    if (type === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      return { startDate: startOfDay, endDate: undefined }; // End date is now, effectively
+    }
+
+    if (type === 'yesterday') {
+      const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
+      const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - 1;
+      return { startDate: startOfYesterday, endDate: endOfYesterday };
+    }
+
+    if (type === 'week') {
+      const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).setHours(0,0,0,0);
+      return { startDate: firstDayOfWeek, endDate: undefined };
+    }
+
+    if (type === 'month') {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      return { startDate: firstDayOfMonth, endDate: undefined };
+    }
+
+    if (type === 'custom' && start && end) {
+      const customStart = new Date(start).getTime();
+      const customEnd = new Date(end).setHours(23,59,59,999);
+      return { startDate: customStart, endDate: customEnd };
+    }
+
+    return { startDate: undefined, endDate: undefined }; // 'all' or fallback
+  }, []);
+
+  const fetchLogs = useCallback(async (isInitial: boolean = false, type = filterType, cStart = customStartDate, cEnd = customEndDate) => {
+    if (isInitial) setIsLoading(true);
+    else setIsFetchingMore(true);
+
+    try {
+      const { startDate, endDate } = getDateRange(type, cStart, cEnd);
+
+      const currentLastDoc = isInitial ? null : lastDoc;
+
+      const [logsResponse, inventoryResponse] = await Promise.all([
+        getKardexLogs(currentLastDoc, 50, startDate, endDate),
+        // Solo obtener inventario si es la carga inicial (no en el botón 'cargar más')
+        isInitial ? getInventoryItems(null, 500) : Promise.resolve(null)
+      ]);
+
+      if (inventoryResponse) {
         const map: Record<string, string> = {};
-        fetchedInventory.forEach(item => {
+        inventoryResponse.items.forEach(item => {
           map[item.id] = item.name;
         });
-
         setInventoryMap(map);
-        setLogs(fetchedLogs);
-      } catch (error) {
-        console.error("Error fetching Kardex logs:", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchLogsAndProducts();
-  }, []);
+      setLogs(prev => {
+        if (isInitial) return logsResponse.items;
+
+        const existingIds = new Set(prev.map(l => l.id));
+        const newLogs = logsResponse.items.filter(log => !existingIds.has(log.id));
+        return [...prev, ...newLogs];
+      });
+
+      setLastDoc(logsResponse.lastDoc);
+      setHasMore(logsResponse.lastDoc !== null);
+    } catch (error) {
+      console.error("Error fetching Kardex logs:", error);
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, [filterType, customStartDate, customEndDate, lastDoc, getDateRange]);
+
+  useEffect(() => {
+    // Cuando el componente monta o cambia el filtro, hacemos carga inicial
+    fetchLogs(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType]);
+
+  // Trigger para filtro personalizado cuando el usuario cambia fechas de inicio/fin
+  useEffect(() => {
+    if (filterType === 'custom' && customStartDate && customEndDate) {
+      fetchLogs(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customStartDate, customEndDate]);
+
+  const loadMoreLogs = () => {
+    fetchLogs(false);
+  };
 
   const getProductName = (productId: string) => {
     return inventoryMap[productId] || 'Producto Desconocido';
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Activity className="w-6 h-6 text-blue-600" />
           Historial de Movimientos (Kárdex)
         </h1>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="border-gray-300 rounded-md shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="today">Hoy</option>
+            <option value="yesterday">Ayer</option>
+            <option value="week">Esta Semana</option>
+            <option value="month">Este Mes</option>
+            <option value="all">Todo el Historial</option>
+            <option value="custom">Personalizado...</option>
+          </select>
+
+          {filterType === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="border-gray-300 rounded-md shadow-sm text-sm"
+              />
+              <span className="text-gray-500 text-sm">a</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="border-gray-300 rounded-md shadow-sm text-sm"
+              />
+            </div>
+          )}
+        </div>
       </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <>
 
       {/* Desktop Table View */}
       <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
@@ -100,12 +208,23 @@ const Kardex = () => {
               {logs.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    No hay movimientos registrados en el Kárdex.
+                    No hay movimientos registrados en el Kárdex en este periodo.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          {hasMore && (
+            <div className="p-4 border-t border-gray-200 flex justify-center bg-gray-50">
+              <button
+                onClick={loadMoreLogs}
+                disabled={isFetchingMore}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                {isFetchingMore ? 'Cargando...' : 'Cargar más movimientos'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -142,10 +261,23 @@ const Kardex = () => {
         })}
         {logs.length === 0 && (
           <div className="text-center py-8 text-gray-500 relative z-10 bg-gray-50 rounded-xl">
-            No hay registros en el Kárdex todavía.
+            No hay registros en el Kárdex en este periodo.
+          </div>
+        )}
+        {hasMore && logs.length > 0 && (
+          <div className="flex justify-center pt-4 pb-8 relative z-10">
+            <button
+              onClick={loadMoreLogs}
+              disabled={isFetchingMore}
+              className="px-6 py-2.5 bg-white shadow-sm border border-slate-200 rounded-full text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+            >
+              {isFetchingMore ? 'Cargando...' : 'Cargar más registros'}
+            </button>
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 };
