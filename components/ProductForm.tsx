@@ -5,6 +5,8 @@ import imageCompression from 'browser-image-compression';
 import { useToast } from '../context/ToastContext';
 import { useInventory } from '../context/InventoryContext';
 import { searchInventoryItems } from '../services/db';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { storage } from '../services/firebase';
 
 interface ProductFormProps {
   onAdd: (product: Omit<Product, 'id'>) => void;
@@ -15,6 +17,7 @@ interface ProductFormProps {
 export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: ProductFormProps) {
   const { showToast } = useToast();
   const [image, setImage] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('');
@@ -78,6 +81,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   useEffect(() => {
     if (editingProduct) {
       setImage(editingProduct.image || '');
+      setImageFile(null);
       setName(editingProduct.name);
       setBrand(editingProduct.brand || '');
       setCategory(editingProduct.category || '');
@@ -97,6 +101,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
   const resetForm = () => {
     setImage('');
+    setImageFile(null);
     setName('');
     setBrand('');
     setCategory('');
@@ -123,22 +128,25 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         };
         const compressedFile = await imageCompression(file, options);
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImage(reader.result as string);
-        };
-        reader.readAsDataURL(compressedFile);
+        setImageFile(compressedFile);
+        setImage(URL.createObjectURL(compressedFile));
       } catch (error) {
         console.error('Error compressing image:', error);
         // Fallback to uncompressed if compression fails
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImage(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+        setImageFile(file);
+        setImage(URL.createObjectURL(file));
       }
     }
   };
+
+  useEffect(() => {
+    // Cleanup temporary URL object
+    return () => {
+      if (imageFile && image.startsWith('blob:')) {
+        URL.revokeObjectURL(image);
+      }
+    };
+  }, [imageFile, image]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +184,28 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
     setIsSubmitting(true);
     try {
+      let finalImageUrl = image;
+
+      if (imageFile) {
+        // 1. Delete old image if it exists and is a Firebase Storage URL
+        if (editingProduct?.image && editingProduct.image.includes('firebasestorage.googleapis.com')) {
+          try {
+            const oldImageRef = ref(storage, editingProduct.image);
+            await deleteObject(oldImageRef);
+          } catch (err) {
+            console.warn('Could not delete old image from Storage', err);
+          }
+        }
+
+        // 2. Upload new image
+        const timestamp = Date.now();
+        const extension = imageFile.type.split('/')[1] || 'webp';
+        const storageRef = ref(storage, `products/${timestamp}.${extension}`);
+
+        await uploadBytes(storageRef, imageFile);
+        finalImageUrl = await getDownloadURL(storageRef);
+      }
+
       const totalPrice = Number(finalPriceBs) * Number(units);
 
       // We await onAdd here so if there's an error we don't clear the form
@@ -188,7 +218,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         categoryType,
         expirationDate,
         barcode,
-        image,
+        image: finalImageUrl,
         priceBs: Number(finalPriceBs),
         units: Number(units),
         wholesalePrice: Number(finalWholesalePrice),
