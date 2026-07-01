@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, PackageX, PackageMinus, Package } from "lucide-react";
-import { getInventoryItems } from "../services/db";
+import { getPaginatedInventoryItems } from "../services/db";
 import { InventoryItem } from "../types";
 
 export default function Alerts() {
@@ -15,7 +15,7 @@ export default function Alerts() {
         // Por ahora leemos la primera página (500 items) para arreglar la rotura de tipos.
         // Nota: para alertas precisas sobre TODO el inventario de miles de items
         // esto requeriría un endpoint específico de cloud functions o paginación completa.
-        const response = await getInventoryItems(null, 500); // 500 para cubrir la mayoría de pymes temporalmente
+        const response = await getPaginatedInventoryItems(null, 500); // 500 para cubrir la mayoría de pymes temporalmente
         // Safe check
         const products = response?.items || [];
         setOutOfStock(products.filter((item) => item.units === 0));
