@@ -4,7 +4,7 @@ import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
 import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getPaginatedInventoryItems, searchInventoryItems } from '../services/db';
 import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
-import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box } from 'lucide-react';
+import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -60,27 +60,31 @@ const Inventory = () => {
 
   useEffect(() => { fetchInventory(true); }, [fetchInventory]);
 
-  const handleSearch = async (term: string) => {
-    setSearchTerm(term);
-    if (term.trim() === '') {
-      setIsSearching(false);
-      fetchInventory(true);
-      return;
-    }
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      setSearchTerm(inputValue);
+      if (inputValue.trim() === '') {
+        setIsSearching(false);
+        fetchInventory(true);
+        return;
+      }
 
-    setIsSearching(true);
-    setIsLoading(true);
-    try {
-      const results = await searchInventoryItems(term);
-      setProducts(results);
-      setHasMore(false); // Disable pagination during search
-    } catch (error) {
-      console.error("Search error:", error);
-      showToast("Error en la búsqueda", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      setIsSearching(true);
+      setIsLoading(true);
+      try {
+        const results = await searchInventoryItems(inputValue);
+        setProducts(results);
+        setHasMore(false); // Disable pagination during search
+      } catch (error) {
+        console.error("Search error:", error);
+        showToast("Error en la búsqueda", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [inputValue, fetchInventory, showToast]);
 
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore && !isSearching) {
@@ -93,6 +97,7 @@ const Inventory = () => {
 
   // Safe default to prevent length/map crashes on completely undefined inventory
   // const products managed locally now
+  const [inputValue, setInputValue] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Edit State
@@ -304,12 +309,16 @@ const Inventory = () => {
 
       <div className="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="relative w-full sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          {isSearching || isLoading ? (
+            <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-500 w-5 h-5 animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          )}
           <input
             type="text"
             placeholder="Buscar por código, nombre, marca..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
