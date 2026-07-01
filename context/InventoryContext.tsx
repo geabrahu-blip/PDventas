@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { InventoryItem } from '../types';
-import { getInventoryItems } from '../services/db';
+import { getInventoryItems, searchInventoryItems } from '../services/db';
+import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 interface InventoryContextType {
   inventory: InventoryItem[];
   isLoading: boolean;
+  isFetchingMore: boolean;
+  hasMore: boolean;
   refreshInventory: () => Promise<void>;
+  loadMoreInventory: () => Promise<void>;
+  searchInventory: (term: string) => Promise<void>;
   updateLocalInventoryItem: (item: InventoryItem) => void;
   removeLocalInventoryItem: (id: string) => void;
   updateMultipleLocalInventoryItems: (items: InventoryItem[]) => void;
@@ -15,13 +20,23 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const loadData = async () => {
-    // Intentionally skipped to avoid loading all inventory items into memory on startup.
-    // Individual pages (POS, Inventory) will fetch their own paginated data.
-    // Context is now only used for caching/local updates if needed, though mostly obsolete.
-    setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const response = await getInventoryItems(null, 50);
+      setInventory(response.items);
+      setLastDoc(response.lastDoc);
+      setHasMore(response.lastDoc !== null);
+    } catch (error) {
+      console.error("Error initial loading inventory:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -29,7 +44,51 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshInventory = async () => {
-    // No-op for global refresh
+    await loadData();
+  };
+
+  const loadMoreInventory = async () => {
+    if (!hasMore || isFetchingMore) return;
+
+    setIsFetchingMore(true);
+    try {
+      const response = await getInventoryItems(lastDoc, 50);
+
+      setInventory(prev => {
+        // Filter out duplicates just in case
+        const existingIds = new Set(prev.map(i => i.id));
+        const newItems = response.items.filter(item => !existingIds.has(item.id));
+        return [...prev, ...newItems];
+      });
+
+      setLastDoc(response.lastDoc);
+      setHasMore(response.lastDoc !== null);
+    } catch (error) {
+      console.error("Error fetching more inventory:", error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
+
+  const searchInventory = async (term: string) => {
+    setIsLoading(true);
+    try {
+      if (!term.trim()) {
+        await loadData(); // Reset to default paginated list
+        return;
+      }
+
+      // La búsqueda en db.ts ahora usa >= y <=
+      // Desactiva la paginación tradicional mientras se busca
+      const searchResults = await searchInventoryItems(term);
+      setInventory(searchResults);
+      setHasMore(false);
+      setLastDoc(null);
+    } catch (error) {
+      console.error("Error searching inventory:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateLocalInventoryItem = (updatedItem: InventoryItem) => {
@@ -66,7 +125,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       value={{
         inventory,
         isLoading,
+        isFetchingMore,
+        hasMore,
         refreshInventory,
+        loadMoreInventory,
+        searchInventory,
         updateLocalInventoryItem,
         removeLocalInventoryItem,
         updateMultipleLocalInventoryItems

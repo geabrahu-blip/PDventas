@@ -11,9 +11,13 @@ export default function Alerts() {
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const items = await getInventoryItems();
+        // En un futuro se podría paginar completamente si el inventario es enorme.
+        // Por ahora leemos la primera página (500 items) para arreglar la rotura de tipos.
+        // Nota: para alertas precisas sobre TODO el inventario de miles de items
+        // esto requeriría un endpoint específico de cloud functions o paginación completa.
+        const response = await getInventoryItems(null, 500); // 500 para cubrir la mayoría de pymes temporalmente
         // Safe check
-        const products = items || [];
+        const products = response?.items || [];
         setOutOfStock(products.filter((item) => item.units === 0));
         setLowStock(products.filter((item) => item.units > 0 && item.units <= 2));
       } catch (error) {
