@@ -22,6 +22,30 @@ const Inventory = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Edit State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+
+  // Modal States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+
+  // Adjust Stock State
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [selectedAdjustItem, setSelectedAdjustItem] = useState<InventoryItem | null>(null);
+  const [adjustQuantity, setAdjustQuantity] = useState<number | ''>('');
+  const [adjustDate, setAdjustDate] = useState(new Date().toISOString().split('T')[0]);
+  const [adjustReason, setAdjustReason] = useState('');
+
+
+
+
   const fetchInventory = useCallback(async (reset: boolean = false) => {
     try {
       if (reset) {
@@ -37,7 +61,7 @@ const Inventory = () => {
       const result = await getPaginatedInventoryItems(currentLastDoc, 20);
 
       setProducts(prev => {
-        const newProducts = reset ? result.items : [...prev, ...result.items];
+        const newProducts = reset ? (result.items || []) : [...prev, ...(result.items || [])];
         // simple dedup by id just in case
         const seen = new Set();
         return newProducts.filter(p => {
@@ -93,29 +117,17 @@ const Inventory = () => {
   };
 
   const refreshInventoryLocal = () => fetchInventory(true);
-  const [isSyncing, setIsSyncing] = useState(false);
+
 
   // Safe default to prevent length/map crashes on completely undefined inventory
   // const products managed locally now
-  const [inputValue, setInputValue] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Edit State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
-  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
 
-  // Modal States
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
-  // Adjust Stock State
-  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
-  const [selectedAdjustItem, setSelectedAdjustItem] = useState<InventoryItem | null>(null);
-  const [adjustQuantity, setAdjustQuantity] = useState<number | ''>('');
-  const [adjustDate, setAdjustDate] = useState(new Date().toISOString().split('T')[0]);
-  const [adjustReason, setAdjustReason] = useState('');
+
+
+
+
 
   const handleOpenAdjust = (product: InventoryItem) => {
     setSelectedAdjustItem(product);
@@ -204,6 +216,7 @@ const Inventory = () => {
     try {
       await deleteInventoryItem(itemToDelete);
       removeLocalInventoryItem(itemToDelete);
+      setProducts(prev => prev.filter(p => p.id !== itemToDelete));
       showToast('Registro eliminado del inventario', 'info');
     } catch (error) {
       console.error('Error deleting item:', error);
