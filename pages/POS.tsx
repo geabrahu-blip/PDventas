@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
-import { getPaginatedInventoryItems, searchInventoryItems } from '../services/db';
-import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { getInventoryItems } from '../services/db';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { processPOSSale } from '../services/db';
@@ -18,53 +17,27 @@ interface CartItem {
 const POS = () => {
   const [products, setProducts] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const lastDocRef = React.useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const isFirstRender = React.useRef(true);
-  const [hasMore, setHasMore] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
 
-  const fetchInventory = useCallback(async (reset: boolean = false) => {
+  const fetchInventory = useCallback(async () => {
     try {
-      if (reset) {
-        setIsLoading(true);
-        setProducts([]);
-        setHasMore(true);
-        lastDocRef.current = null;
-      } else {
-        setIsLoadingMore(true);
-      }
-
-      const currentLastDoc = reset ? null : lastDocRef.current;
-      const result = await getPaginatedInventoryItems(currentLastDoc, 20);
-
-      setProducts(prev => {
-        const newProducts = reset ? result.items : [...prev, ...result.items];
-        const seen = new Set();
-        return newProducts.filter(p => {
-          if (seen.has(p.id)) return false;
-          seen.add(p.id);
-          return true;
-        });
-      });
-
-      lastDocRef.current = result.lastDoc;
-      setHasMore(result.items.length === 20);
+      setIsLoading(true);
+      const items = await getInventoryItems();
+      setProducts(items);
     } catch (error) {
       console.error("Error loading inventory:", error);
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
   }, []);
 
-  useEffect(() => { fetchInventory(true); }, [fetchInventory]);
+  useEffect(() => {
+    // Wrap initial fetch in setTimeout to avoid React concurrent rendering issues
+    const timer = setTimeout(() => {
+      fetchInventory();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchInventory]);
 
-  const handleLoadMore = () => {
-    if (!isLoadingMore && hasMore && !isSearching) {
-      fetchInventory(false);
-    }
-  };
   const { showToast } = useToast();
   const { user } = useAuth();
 
@@ -72,33 +45,6 @@ const POS = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientName, setClientName] = useState('');
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    const delayDebounceFn = setTimeout(async () => {
-      if (inputValue.trim() === '') {
-        setIsSearching(false);
-        fetchInventory(true);
-        return;
-      }
-
-      setIsSearching(true);
-      setIsLoading(true);
-      try {
-        const results = await searchInventoryItems(inputValue);
-        setProducts(results);
-        setHasMore(false);
-      } catch (error) {
-        console.error("Search error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [inputValue, fetchInventory]);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR' | 'Mixto'>('Cash');
   const [mixedAmountQR, setMixedAmountQR] = useState<number | ''>('');
   const [mixedAmountCash, setMixedAmountCash] = useState<number | ''>('');
@@ -108,9 +54,19 @@ const POS = () => {
 
   // Filter products for the catalog
   const filteredProducts = useMemo(() => {
-    // Only show products with stock. Search filtering is already handled on the server/db layer now.
-    return products.filter(p => p.units > 0);
-  }, [products]);
+    let filtered = products.filter(p => p.units > 0);
+
+    if (inputValue.trim() !== '') {
+      const searchTerm = inputValue.toLowerCase().trim();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(searchTerm) ||
+        (p.brand && p.brand.toLowerCase().includes(searchTerm)) ||
+        (p.barcode && p.barcode.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    return filtered;
+  }, [products, inputValue]);
 
   // Derived calculations
   const totalItems = useMemo(() => {
@@ -234,11 +190,11 @@ const POS = () => {
       setInputValue('');
 
       // Refresh global inventory to reflect new stock
-      fetchInventory(true);
+      fetchInventory();
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing sale:", error);
-      showToast(error.message || 'Error al procesar la venta', 'error');
+      showToast(error instanceof Error ? error.message : 'Error al procesar la venta', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -282,7 +238,7 @@ const POS = () => {
             Catálogo
           </h2>
           <div className="relative w-full max-w-md">
-            {isSearching || isLoading ? (
+            {isLoading ? (
               <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-500 w-4 h-4 animate-spin" />
             ) : (
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -310,7 +266,6 @@ const POS = () => {
                 totalCount={filteredProducts.length}
                 listClassName="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 pb-10"
                 itemClassName="flex flex-col h-full"
-                endReached={handleLoadMore}
                 itemContent={(index) => {
                   const product = filteredProducts[index];
                   const cartItem = cart.find(c => c.product.id === product.id);
