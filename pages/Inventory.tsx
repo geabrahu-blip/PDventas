@@ -2,8 +2,7 @@ import ProductForm from "../components/ProductForm";
 import React, { useState, useEffect, useCallback } from 'react';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
-import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getPaginatedInventoryItems, searchInventoryItems } from '../services/db';
-import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getInventoryItems } from '../services/db';
 import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
@@ -15,17 +14,11 @@ const Inventory = () => {
   const { showToast } = useToast();
   const { updateLocalInventoryItem, removeLocalInventoryItem } = useInventory();
 
-  const [products, setProducts] = useState<InventoryItem[]>([]);
+  const [allProducts, setAllProducts] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const lastDocRef = React.useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const isFirstRender = React.useRef(true);
-  const [hasMore, setHasMore] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
 
   // Edit State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,81 +40,26 @@ const Inventory = () => {
 
 
 
-  const fetchInventory = useCallback(async (reset: boolean = false) => {
+  const fetchInventory = useCallback(async () => {
     try {
-      if (reset) {
-        setIsLoading(true);
-        setProducts([]);
-        setHasMore(true);
-        lastDocRef.current = null;
-      } else {
-        setIsLoadingMore(true);
-      }
+      setIsLoading(true);
+      const items = await getInventoryItems();
 
-      const currentLastDoc = reset ? null : lastDocRef.current;
-      const result = await getPaginatedInventoryItems(currentLastDoc, 20);
+      // Sort alphabetically by name
+      items.sort((a, b) => a.name.localeCompare(b.name));
 
-      setProducts(prev => {
-        const newProducts = reset ? (result.items || []) : [...prev, ...(result.items || [])];
-        // simple dedup by id just in case
-        const seen = new Set();
-        return newProducts.filter(p => {
-          if (seen.has(p.id)) return false;
-          seen.add(p.id);
-          return true;
-        });
-      });
-
-      lastDocRef.current = result.lastDoc;
-      setHasMore(result.items.length === 20);
+      setAllProducts(items);
     } catch (error) {
       console.error("Error loading inventory:", error);
       showToast("Error al cargar el inventario", "error");
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
   }, [showToast]);
 
-  useEffect(() => { fetchInventory(true); }, [fetchInventory]);
+  useEffect(() => { fetchInventory(); }, [fetchInventory]);
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    const delayDebounceFn = setTimeout(async () => {
-      setSearchTerm(inputValue);
-      if (inputValue.trim() === '') {
-        setIsSearching(false);
-        fetchInventory(true);
-        return;
-      }
-
-      setIsSearching(true);
-      setIsLoading(true);
-      try {
-        const results = await searchInventoryItems(inputValue);
-        setProducts(results);
-        setHasMore(false); // Disable pagination during search
-      } catch (error) {
-        console.error("Search error:", error);
-        showToast("Error en la búsqueda", "error");
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [inputValue, fetchInventory, showToast]);
-
-  const handleLoadMore = () => {
-    if (!isLoadingMore && hasMore && !isSearching) {
-      fetchInventory(false);
-    }
-  };
-
-  const refreshInventoryLocal = () => fetchInventory(true);
+  const refreshInventoryLocal = () => fetchInventory();
 
 
   // Safe default to prevent length/map crashes on completely undefined inventory
@@ -159,6 +97,7 @@ const Inventory = () => {
         units: selectedAdjustItem.units + Number(adjustQuantity)
       };
       updateLocalInventoryItem(updatedItem);
+      setAllProducts(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
 
       setIsAdjustModalOpen(false);
       setSelectedAdjustItem(null);
@@ -186,6 +125,7 @@ const Inventory = () => {
       setIsEditModalOpen(false);
       setEditItem(null);
       updateLocalInventoryItem(updatedItem);
+      setAllProducts(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
       showToast('Producto actualizado con éxito', 'success');
     } catch (error) {
       console.error('Error updating product:', error);
@@ -221,7 +161,7 @@ const Inventory = () => {
     try {
       await deleteInventoryItem(itemToDelete);
       removeLocalInventoryItem(itemToDelete);
-      setProducts(prev => prev.filter(p => p.id !== itemToDelete));
+      setAllProducts(prev => prev.filter(p => p.id !== itemToDelete));
       showToast('Registro eliminado del inventario', 'info');
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -241,11 +181,15 @@ const Inventory = () => {
   }
 
   const safeToLower = (val: any) => (val ? String(val).toLowerCase() : '');
-  const searchLower = safeToLower(searchTerm);
+  const searchLower = safeToLower(inputValue);
 
-  // Search is now server-side or handled by the search function, so filteredProducts is just products
-  const filteredProducts = products;
-
+  // Filter products synchronously based on inputValue
+  const filteredProducts = allProducts.filter(p =>
+    safeToLower(p.name).includes(searchLower) ||
+    safeToLower(p.barcode).includes(searchLower) ||
+    safeToLower(p.brand).includes(searchLower) ||
+    safeToLower((p as any).categoryType).includes(searchLower)
+  );
 
   return (
     <div className="space-y-6">
@@ -327,7 +271,7 @@ const Inventory = () => {
 
       <div className="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="relative w-full sm:max-w-md">
-          {isSearching || isLoading ? (
+          {isLoading ? (
             <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-500 w-5 h-5 animate-spin" />
           ) : (
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -518,26 +462,6 @@ const Inventory = () => {
           />
         )}
       </div>
-
-      {/* Botón Cargar Más Manual */}
-      {hasMore && !isSearching && searchTerm === '' && filteredProducts.length > 0 && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={handleLoadMore}
-            disabled={isLoadingMore}
-            className="flex items-center gap-2 px-6 py-2 bg-teal-50 text-teal-600 border border-teal-100 rounded-md hover:bg-teal-100 transition-colors font-medium disabled:opacity-50"
-          >
-            {isLoadingMore ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Cargando...
-              </>
-            ) : (
-              'Cargar más productos'
-            )}
-          </button>
-        </div>
-      )}
 
       {/* Adjust Stock Modal */}
       {isAdjustModalOpen && selectedAdjustItem && (
