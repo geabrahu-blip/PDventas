@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import SalesReport from './pages/SalesReport';
 import Inventory from './pages/Inventory';
 import Catalog from './pages/Catalog';
-import Kardex from './pages/Kardex';
+// import Kardex from './pages/Kardex';
 import POS from './pages/POS';
 import Users from './pages/Users';
 import Alerts from './pages/Alerts';
@@ -22,7 +22,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/pos" element={<POS />} />
-            <Route path="/kardex" element={<Kardex />} />
+            {/* <Route path="/kardex" element={<Kardex />} /> */}
             <Route path="/reports" element={<SalesReport />} />
             <Route path="/users" element={<Users />} />
             <Route path="/alerts" element={<Alerts />} />
