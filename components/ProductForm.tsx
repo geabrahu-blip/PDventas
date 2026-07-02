@@ -263,7 +263,16 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             </>
           )}
         </h2>
-
+        {onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors absolute right-2 top-2 md:relative md:right-0 md:top-0"
+            title="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -405,30 +414,39 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             <label htmlFor="prod-gender" className="block text-sm font-medium text-gray-700 mb-1">
               {categoryType === 'Perfumes' ? 'Género' : 'Tipo de Piel'}
             </label>
-            <select
-              id="prod-gender"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Seleccionar...</option>
-              {categoryType === 'Perfumes' ? (
-                <>
-                  <option value="Mujer">Mujer</option>
-                  <option value="Varón">Varón</option>
-                  <option value="Unisex">Unisex</option>
-                </>
-              ) : (
-                <>
-                  <option value="Todo tipo de piel">Todo tipo de piel</option>
-                  <option value="Piel Grasa">Piel Grasa</option>
-                  <option value="Piel Seca">Piel Seca</option>
-                  <option value="Piel Mixta">Piel Mixta</option>
-                  <option value="Piel Sensible">Piel Sensible</option>
-                  <option value="Piel con manchas">Piel con manchas</option>
-                </>
-              )}
-            </select>
+            {categoryType === 'Perfumes' ? (
+              <select
+                id="prod-gender"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="Mujer">Mujer</option>
+                <option value="Varón">Varón</option>
+                <option value="Unisex">Unisex</option>
+              </select>
+            ) : (
+              <>
+                <input
+                  id="prod-gender"
+                  type="text"
+                  list="skin-types"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Ej. Piel Grasa..."
+                />
+                <datalist id="skin-types">
+                  <option value="Todo tipo de piel" />
+                  <option value="Piel Grasa" />
+                  <option value="Piel Seca" />
+                  <option value="Piel Mixta" />
+                  <option value="Piel Sensible" />
+                  <option value="Piel con manchas" />
+                </datalist>
+              </>
+            )}
           </div>
         )}
 
@@ -529,7 +547,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         </div>
 
         <div className="flex gap-2">
-          {editingProduct && onCancelEdit && (
+          {onCancelEdit && (
             <button
               type="button"
               onClick={onCancelEdit}
