@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, PackageX, PackageMinus, Package } from "lucide-react";
+import { AlertTriangle, PackageX, PackageMinus, Package, Loader2 } from "lucide-react";
 import { getPaginatedInventoryItems } from "../services/db";
 import { InventoryItem } from "../types";
 
@@ -8,27 +8,49 @@ export default function Alerts() {
   const [outOfStock, setOutOfStock] = useState<InventoryItem[]>([]);
   const [lowStock, setLowStock] = useState<InventoryItem[]>([]);
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        // En un futuro se podría paginar completamente si el inventario es enorme.
-        // Por ahora leemos la primera página (500 items) para arreglar la rotura de tipos.
-        // Nota: para alertas precisas sobre TODO el inventario de miles de items
-        // esto requeriría un endpoint específico de cloud functions o paginación completa.
-        const response = await getPaginatedInventoryItems(null, 500); // 500 para cubrir la mayoría de pymes temporalmente
-        // Safe check
-        const products = response?.items || [];
-        setOutOfStock(products.filter((item) => item.units === 0));
-        setLowStock(products.filter((item) => item.units > 0 && item.units <= 2));
-      } catch (error) {
-        console.error("Error fetching alerts data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Nuevos estados para paginación
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const lastDocRef = React.useRef<any>(null);
 
-    fetchAlerts();
+  const fetchAlerts = React.useCallback(async (reset: boolean = false) => {
+    try {
+      if (reset) {
+        setLoading(true);
+        lastDocRef.current = null;
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      const currentLastDoc = reset ? null : lastDocRef.current;
+      const response = await getPaginatedInventoryItems(currentLastDoc, 20);
+      const products = response?.items || [];
+
+      const newOutOfStock = products.filter((item) => item.units === 0);
+      const newLowStock = products.filter((item) => item.units > 0 && item.units <= 2);
+
+      setOutOfStock(prev => reset ? newOutOfStock : [...(prev || []), ...newOutOfStock]);
+      setLowStock(prev => reset ? newLowStock : [...(prev || []), ...newLowStock]);
+
+      lastDocRef.current = response.lastDoc;
+      setHasMore(products.length === 20);
+    } catch (error) {
+      console.error("Error fetching alerts data:", error);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAlerts(true);
+  }, [fetchAlerts]);
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      fetchAlerts(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -160,6 +182,26 @@ export default function Alerts() {
           </div>
         </div>
       </div>
+
+      {/* Botón Cargar Más Manual */}
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+            className="flex items-center gap-2 px-6 py-2 bg-teal-50 text-teal-600 border border-teal-100 rounded-md hover:bg-teal-100 transition-colors font-medium disabled:opacity-50"
+          >
+            {isLoadingMore ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Cargando alertas...
+              </>
+            ) : (
+              'Cargar más productos'
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
