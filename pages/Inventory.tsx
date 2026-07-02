@@ -352,7 +352,6 @@ const Inventory = () => {
           <TableVirtuoso
             style={{ height: '100%' }}
             data={filteredProducts}
-            endReached={handleLoadMore}
             components={{
               Table: ({ style, ...props }) => (
                 <table {...props} style={{ ...style, width: '100%', textAlign: 'left', fontSize: '0.875rem' }} className="min-w-full" />
@@ -519,6 +518,26 @@ const Inventory = () => {
           />
         )}
       </div>
+
+      {/* Botón Cargar Más Manual */}
+      {hasMore && !isSearching && searchTerm === '' && filteredProducts.length > 0 && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+            className="flex items-center gap-2 px-6 py-2 bg-teal-50 text-teal-600 border border-teal-100 rounded-md hover:bg-teal-100 transition-colors font-medium disabled:opacity-50"
+          >
+            {isLoadingMore ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Cargando...
+              </>
+            ) : (
+              'Cargar más productos'
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Adjust Stock Modal */}
       {isAdjustModalOpen && selectedAdjustItem && (
