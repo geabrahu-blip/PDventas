@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { KardexLog } from '../types';
 import { getKardexLogs, getPaginatedInventoryItems } from '../services/db';
-import { Activity, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Activity, ArrowDownRight, ArrowUpRight, Loader2 } from 'lucide-react';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 const Kardex = () => {
   const [logs, setLogs] = useState<KardexLog[]>([]);
   const [inventoryMap, setInventoryMap] = useState<Record<string, string>>({});
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const lastDocRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Date filtering state
   const [filterType, setFilterType] = useState('today');
@@ -51,22 +51,25 @@ const Kardex = () => {
   }, []);
 
   const fetchLogs = useCallback(async (isInitial: boolean = false, type = filterType, cStart = customStartDate, cEnd = customEndDate) => {
-    if (isInitial) setIsLoading(true);
-    else setIsFetchingMore(true);
+    if (isInitial) {
+      setIsLoading(true);
+      lastDocRef.current = null;
+    } else {
+      setIsLoadingMore(true);
+    }
 
     try {
       const { startDate, endDate } = getDateRange(type, cStart, cEnd);
 
-      const currentLastDoc = isInitial ? null : lastDoc;
-
       const [logsResponse, inventoryResponse] = await Promise.all([
-        getKardexLogs(currentLastDoc, 50, startDate, endDate),
-        // Solo obtener inventario si es la carga inicial (no en el botón 'cargar más')
-        isInitial ? getPaginatedInventoryItems(null, 500) : Promise.resolve(null)
+        getKardexLogs(lastDocRef.current, 30, startDate, endDate),
+        isInitial && Object.keys(inventoryMap).length === 0
+          ? getPaginatedInventoryItems(null, 500)
+          : Promise.resolve(null)
       ]);
 
       if (inventoryResponse) {
-        const map: Record<string, string> = {};
+        const map: Record<string, string> = { ...inventoryMap };
         inventoryResponse.items.forEach(item => {
           map[item.id] = item.name;
         });
@@ -74,22 +77,21 @@ const Kardex = () => {
       }
 
       setLogs(prev => {
-        if (isInitial) return logsResponse.items;
-
-        const existingIds = new Set(prev.map(l => l.id));
-        const newLogs = logsResponse.items.filter(log => !existingIds.has(log.id));
-        return [...prev, ...newLogs];
+        if (isInitial) return logsResponse.items || [];
+        const existingIds = new Set((prev || []).map(l => l.id));
+        const newLogs = (logsResponse.items || []).filter(log => !existingIds.has(log.id));
+        return [...(prev || []), ...newLogs];
       });
 
-      setLastDoc(logsResponse.lastDoc);
+      lastDocRef.current = logsResponse.lastDoc;
       setHasMore(logsResponse.lastDoc !== null);
     } catch (error) {
       console.error("Error fetching Kardex logs:", error);
     } finally {
       setIsLoading(false);
-      setIsFetchingMore(false);
+      setIsLoadingMore(false);
     }
-  }, [filterType, customStartDate, customEndDate, lastDoc, getDateRange]);
+  }, [filterType, customStartDate, customEndDate, getDateRange, inventoryMap]);
 
   useEffect(() => {
     // Cuando el componente monta o cambia el filtro, hacemos carga inicial
@@ -113,7 +115,9 @@ const Kardex = () => {
   }, [customStartDate, customEndDate]);
 
   const loadMoreLogs = () => {
-    fetchLogs(false);
+    if (!isLoadingMore && hasMore) {
+      fetchLogs(false);
+    }
   };
 
   const getProductName = (productId: string) => {
@@ -225,10 +229,11 @@ const Kardex = () => {
             <div className="p-4 border-t border-gray-200 flex justify-center bg-gray-50">
               <button
                 onClick={loadMoreLogs}
-                disabled={isFetchingMore}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                disabled={isLoadingMore}
+                className="flex items-center gap-2 px-6 py-2.5 bg-white shadow-sm border border-slate-200 rounded-full text-sm font-medium text-teal-600 hover:bg-teal-50 disabled:opacity-50 transition-colors"
               >
-                {isFetchingMore ? 'Cargando...' : 'Cargar más movimientos'}
+                {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isLoadingMore ? 'Cargando...' : 'Cargar más movimientos'}
               </button>
             </div>
           )}
@@ -275,10 +280,11 @@ const Kardex = () => {
           <div className="flex justify-center pt-4 pb-8 relative z-10">
             <button
               onClick={loadMoreLogs}
-              disabled={isFetchingMore}
-              className="px-6 py-2.5 bg-white shadow-sm border border-slate-200 rounded-full text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+              disabled={isLoadingMore}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white shadow-sm border border-slate-200 rounded-full text-sm font-medium text-teal-600 hover:bg-teal-50 disabled:opacity-50 transition-colors"
             >
-              {isFetchingMore ? 'Cargando...' : 'Cargar más registros'}
+              {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isLoadingMore ? 'Cargando...' : 'Cargar más registros'}
             </button>
           </div>
         )}
