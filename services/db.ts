@@ -187,6 +187,8 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
     brand: newProductWithId.brand,
     category: newProductWithId.category,
     gender: newProductWithId.gender,
+    capacity: newProductWithId.capacity,
+    categoryType: newProductWithId.categoryType,
     barcode: newProductWithId.barcode,
     image: newProductWithId.image,
     priceBs: newProductWithId.priceBs,
