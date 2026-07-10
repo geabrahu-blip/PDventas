@@ -296,6 +296,7 @@ const Inventory = () => {
           <TableVirtuoso
             style={{ height: '100%' }}
             data={filteredProducts}
+            computeItemKey={(index, item) => item.id}
             components={{
               Table: ({ style, ...props }) => (
                 <table {...props} style={{ ...style, width: '100%', textAlign: 'left', fontSize: '0.875rem' }} className="min-w-full" />
@@ -399,6 +400,7 @@ const Inventory = () => {
           <Virtuoso
             useWindowScroll
             data={filteredProducts}
+            computeItemKey={(index, product) => product.id}
             itemContent={(_, product) => {
               let bgClass = "bg-white";
               if (product.units === 0) bgClass = "bg-red-50";
