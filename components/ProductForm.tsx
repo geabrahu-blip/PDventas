@@ -342,6 +342,12 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               if (!editingProduct) setShowProductSearch(true);
             }}
             onFocus={() => { if (!editingProduct) setShowProductSearch(true); }}
+            onKeyDown={(e) => {
+              // Si el menú está abierto y presiona Enter, cerramos el menú sin seleccionar nada para evitar auto-relleno indeseado
+              if (e.key === 'Enter' && showProductSearch) {
+                setShowProductSearch(false);
+              }
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Busca por nombre o código..."
           />
@@ -353,7 +359,12 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
                     {filteredProducts.map(p => (
                       <li
                         key={p.id}
-                        onClick={() => handleSelectExistingProduct(p)}
+                        onMouseDown={(e) => {
+                          // Usar onMouseDown y preventDefault evita que el input pierda foco prematuramente,
+                          // y asegura que el clic sea intencional antes de procesar otros eventos
+                          e.preventDefault();
+                          handleSelectExistingProduct(p);
+                        }}
                         className="px-4 py-2 hover:bg-teal-50 cursor-pointer flex items-center gap-3 border-b border-gray-50 last:border-0"
                       >
                         {p.image ? (
