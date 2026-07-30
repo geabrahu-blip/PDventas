@@ -248,6 +248,17 @@ const POS = () => {
               placeholder="Buscar esencia, crema..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && inputValue.trim() !== '') {
+                  const searchTerm = inputValue.trim();
+                  // Find exact barcode match
+                  const matchedProduct = products.find(p => p.barcode === searchTerm);
+                  if (matchedProduct && matchedProduct.units > 0) {
+                    addToCart(matchedProduct);
+                    setInputValue('');
+                  }
+                }
+              }}
               className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-cyan-500 focus:border-cyan-500 bg-slate-50 transition-colors"
             />
           </div>
