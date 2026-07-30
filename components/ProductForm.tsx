@@ -336,6 +336,8 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           />
         </div>
 
+        {isAdmin && (
+          <>
         {/* Nombre, Marca, Categoría */}
         <div className="col-span-1 md:col-span-1 lg:col-span-3 relative">
           <label htmlFor="prod-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Producto</label>
@@ -495,6 +497,8 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           </div>
         </div>
 
+          </>
+        )}
         {isAdmin && (
         <div className="col-span-1 md:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-gray-100 pt-4">
           <div className="col-span-1">

@@ -358,29 +358,31 @@ const Inventory = () => {
                 <td className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
                     {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => handleOpenAdjust(product)}
-                          className="inline-flex items-center p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                          title="Ajustar Stock (Kárdex)"
-                        >
-                          <Box className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenEdit(product)}
-                          className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                          title="Editar Producto"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(product.id)}
-                          className="inline-flex items-center p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
-                          title="Eliminar por error"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
+                      <button
+                        onClick={() => handleOpenAdjust(product)}
+                        className="inline-flex items-center p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Ajustar Stock (Kárdex)"
+                      >
+                        <Box className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handleOpenEdit(product)}
+                      className="inline-flex items-center p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
+                      title="Editar Producto"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeleteItem(product.id)}
+                        className="inline-flex items-center p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
+                        title="Eliminar por error"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                 </td>
@@ -436,20 +438,24 @@ const Inventory = () => {
                   </div>
                 </div>
 
-                {isAdmin && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                  {isAdmin && (
                     <button
                       onClick={() => handleOpenAdjust(product)}
                       className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors"
                     >
                       <Box className="w-4 h-4" /> Ajustar
                     </button>
-                    <button
-                      onClick={() => handleOpenEdit(product)}
-                      className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <Edit3 className="w-4 h-4" /> Editar
-                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleOpenEdit(product)}
+                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4" /> Editar
+                  </button>
+
+                  {isAdmin && (
                     <button
                       onClick={() => handleDeleteItem(product.id)}
                       className="flex items-center justify-center min-w-[44px] min-h-[44px] bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
@@ -457,8 +463,8 @@ const Inventory = () => {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}}
           />
