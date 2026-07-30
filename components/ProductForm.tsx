@@ -4,6 +4,7 @@ import { Image as ImageIcon, Plus, Save, X, Search } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { useToast } from '../context/ToastContext';
 import { useInventory } from '../context/InventoryContext';
+import { useAuth } from '../context/AuthContext';
 import { searchInventoryItems } from '../services/db';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../services/firebase';
@@ -16,6 +17,7 @@ interface ProductFormProps {
 
 export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: ProductFormProps) {
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
   const [image, setImage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [name, setName] = useState('');
@@ -276,6 +278,8 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {isAdmin && (
+          <>
         {/* Imagen */}
         <div className="col-span-1 md:col-span-2 lg:col-span-4 flex gap-4 items-start">
           <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden shrink-0">
@@ -316,8 +320,11 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           </select>
         </div>
 
+          </>
+        )}
+
         {/* Código de Barras */}
-        <div className="col-span-1">
+        <div className={!isAdmin ? "col-span-1 md:col-span-2 lg:col-span-4" : "col-span-1"}>
           <label htmlFor="prod-barcode" className="block text-sm font-medium text-gray-700 mb-1">Código (SKU/Balanza)</label>
           <input
             id="prod-barcode"
@@ -488,6 +495,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           </div>
         </div>
 
+        {isAdmin && (
         <div className="col-span-1 md:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-gray-100 pt-4">
           <div className="col-span-1">
             <label htmlFor="prod-units" className="block text-sm font-medium text-gray-700 mb-1">Unidades</label>
@@ -545,14 +553,19 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
             />
           </div>
         </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <div className="text-sm">
-          {categoryType !== 'Perfumes' && (
+          {isAdmin && (
             <>
-              <span className="text-gray-500">Costo Total del Lote: </span>
-              <span className="text-lg font-bold text-gray-900">Bs. {currentTotal}</span>
+              {categoryType !== 'Perfumes' && (
+                <>
+                  <span className="text-gray-500">Costo Total del Lote: </span>
+                  <span className="text-lg font-bold text-gray-900">Bs. {currentTotal}</span>
+                </>
+              )}
             </>
           )}
         </div>
