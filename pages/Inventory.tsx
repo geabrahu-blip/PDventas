@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
 import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getInventoryItems } from '../services/db';
-import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2 } from 'lucide-react';
+import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2, Barcode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
