@@ -664,14 +664,17 @@ export const processBulkTransfer = async (
 export const getSales = async (dateStr?: string): Promise<Sale[]> => {
   let q;
   if (dateStr) {
-    // Because date is stored as an ISO string (e.g., "2023-10-25T14:30:00.000Z"),
-    // we can query string fields starting with the given date prefix
-    const startDate = dateStr;
-    const endDate = dateStr + '\uf8ff';
+    // Treat dateStr as local time (YYYY-MM-DD)
+    // Create start of day in local time
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    // We use the ISO string of the local start and end dates to query the "date" field
     q = query(
       collection(db, 'sales'),
-      where('date', '>=', startDate),
-      where('date', '<=', endDate)
+      where('date', '>=', startDate.toISOString()),
+      where('date', '<=', endDate.toISOString())
     );
   } else {
     q = query(collection(db, 'sales'));

@@ -5,6 +5,7 @@ import { FileText, Calendar, DollarSign, Trash2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const SalesReport = () => {
   const { showToast } = useToast();
@@ -16,7 +17,7 @@ const SalesReport = () => {
   const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
 
   // Filters
-  const [filterDate, setFilterDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [filterDate, setFilterDate] = useState<string>(() => getLocalDateString());
 
   const loadData = useCallback(async () => {
     try {
