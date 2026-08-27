@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
 import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getInventoryItems } from '../services/db';
-import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2, Barcode } from 'lucide-react';
+import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2, Barcode as BarcodeIcon } from 'lucide-react';
+import Barcode from 'react-barcode';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -322,6 +323,7 @@ const Inventory = () => {
                 <th className="px-6 py-4 bg-gray-50">Producto</th>
                 <th className="px-6 py-4 bg-gray-50 text-center">Stock</th>
                 <th className="px-6 py-4 bg-gray-50 text-right">Precio Venta</th>
+                <th className="px-6 py-4 bg-gray-50 text-center">Código de Barras</th>
                 <th className="px-6 py-4 bg-gray-50 text-center">Acciones</th>
               </tr>
             )}
@@ -354,6 +356,21 @@ const Inventory = () => {
                 </td>
                 <td className="px-6 py-4 text-right text-emerald-600 font-medium">
                   Bs. {(product.sellingPrice || 0).toFixed(2)}
+                </td>
+                <td className="px-6 py-4 text-center flex justify-center items-center">
+                  {product.barcode ? (
+                    <Barcode
+                      value={product.barcode}
+                      width={1}
+                      height={30}
+                      fontSize={12}
+                      margin={0}
+                      displayValue={true}
+                      background="transparent"
+                    />
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
@@ -432,8 +449,16 @@ const Inventory = () => {
                       {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 text-[10px]">{product.gender}</span>}
                     </div>
 
-                    <div className="mt-2 text-sm font-bold text-slate-800">
-                      Bs. {(product.sellingPrice || 0).toFixed(2)}
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-sm font-bold text-slate-800">
+                        Bs. {(product.sellingPrice || 0).toFixed(2)}
+                      </div>
+                      {product.barcode && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                          <BarcodeIcon className="w-3.5 h-3.5" />
+                          <span>{product.barcode}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
