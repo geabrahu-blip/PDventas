@@ -329,10 +329,17 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           <input
             id="prod-barcode"
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^\d*$/.test(val)) {
+                setBarcode(val);
+              }
+            }}
             className="w-full px-3 py-2 border border-blue-100 bg-blue-50/50 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-            placeholder="Ej. CERA-100"
+            placeholder="Ej. 123456789 (Opcional, Solo números)"
           />
         </div>
 

@@ -282,6 +282,15 @@ const Inventory = () => {
             placeholder="Buscar por código, nombre, marca..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              // Si el usuario presiona Enter (ej. al escanear un código de barras)
+              // ya tenemos el filtro en tiempo real, pero podríamos forzar el blur
+              // para cerrar el teclado en móviles, o no hacer nada pues el filtro
+              // ya actúa sobre `filteredProducts`.
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
@@ -357,7 +366,8 @@ const Inventory = () => {
                 <td className="px-6 py-4 text-right text-emerald-600 font-medium">
                   Bs. {(product.sellingPrice || 0).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 text-center flex justify-center items-center">
+                <td className="px-6 py-4 text-center">
+                  <div className="flex justify-center items-center">
                   {product.barcode ? (
                     <Barcode
                       value={product.barcode}
@@ -371,6 +381,7 @@ const Inventory = () => {
                   ) : (
                     <span className="text-gray-400">—</span>
                   )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
