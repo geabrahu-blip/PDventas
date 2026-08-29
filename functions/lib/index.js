@@ -39,12 +39,14 @@ const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 admin.initializeApp();
 const db = admin.firestore();
-// Secret to be set in environment config, or hardcoded for phase 1 demo if preferred.
-// Normally: functions.config().webhook.secret
-const WEBHOOK_SECRET = 'SUPER_SECRET_TOKEN_123'; // Replace with a secure token
+// Use process.env for secure token storage in production, with a fallback for local testing
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'SUPER_SECRET_TOKEN_123';
 exports.confirmQRPayment = functions.https.onRequest(async (req, res) => {
     // 1. Validate Secret Header
     const clientSecret = req.header('x-webhook-secret');
+    if (!process.env.WEBHOOK_SECRET) {
+        console.warn("WEBHOOK_SECRET environment variable is not set. Using insecure fallback.");
+    }
     if (clientSecret !== WEBHOOK_SECRET) {
         res.status(401).send('Unauthorized');
         return;
