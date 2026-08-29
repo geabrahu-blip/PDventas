@@ -3,9 +3,11 @@ import { VirtuosoGrid } from 'react-virtuoso';
 import { getInventoryItems } from '../services/db';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
-import { processPOSSale } from '../services/db';
+import { processPOSSale, createPendingQRSale, cancelPendingQRSale } from '../services/db';
+import { db } from '../services/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { InventoryItem } from '../types';
-import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Sparkles, Trash2, Loader2 } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Sparkles, Trash2, Loader2, QrCode, XCircle, CheckCircle2 } from 'lucide-react';
 import { printReceipt } from '../utils/printReceipt';
 import { ProductCard } from '../components/ProductCard';
 
@@ -45,12 +47,117 @@ const POS = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientName, setClientName] = useState('');
 
-  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR' | 'Mixto'>('Cash');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR' | 'Mixto' | 'QR_AUTO'>('Cash');
   const [mixedAmountQR, setMixedAmountQR] = useState<number | ''>('');
   const [mixedAmountCash, setMixedAmountCash] = useState<number | ''>('');
   const [globalDiscount, setGlobalDiscount] = useState<number | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'catalog' | 'cart'>('catalog');
+
+  // Beta QR Modal State
+  const [pendingSaleId, setPendingSaleId] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes
+  const isProcessingRef = React.useRef(false); // Ref to avoid stale closure double triggers
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let unsubscribe: () => void;
+
+    if (pendingSaleId) {
+      isProcessingRef.current = false;
+      // Start countdown
+      setTimeLeft(300);
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Listen to Firestore doc
+      unsubscribe = onSnapshot(doc(db, 'sales', pendingSaleId), async (docSnap) => {
+        if (docSnap.exists() && docSnap.data().status === 'PAID') {
+          // Webhook successfully marked it as paid!
+          if (isProcessingRef.current) return;
+          clearInterval(timer);
+          await finalizePendingSale(pendingSaleId, false);
+        }
+      });
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+      if (unsubscribe) unsubscribe();
+    };
+  }, [pendingSaleId]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const finalizePendingSale = async (saleId: string, isManual: boolean) => {
+    if (isProcessingRef.current) return; // Prevent double trigger correctly via ref
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+    try {
+      const saleItems = cart.map(item => ({
+        productId: item.product.id,
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.product.sellingPrice,
+        subtotal: item.product.sellingPrice * item.quantity
+      }));
+
+      await processPOSSale(
+        clientName.trim(),
+        saleItems,
+        subtotal,
+        total,
+        Number(globalDiscount) || 0,
+        'QR_AUTO',
+        user?.id,
+        user?.name,
+        undefined,
+        undefined,
+        saleId,
+        isManual
+      );
+
+      showToast(isManual ? 'Pago confirmado manualmente' : 'Pago confirmado por webhook', 'success');
+
+      printReceipt({
+        items: cart.map(item => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          price: item.product.sellingPrice
+        })),
+        subtotal,
+        discount: Number(globalDiscount) || 0,
+        total,
+        date: new Date(),
+        paymentMethod: 'QR',
+      });
+
+      // Reset
+      setPendingSaleId(null);
+      setCart([]);
+      setClientName('');
+      setGlobalDiscount('');
+      setPaymentMethod('Cash');
+      setInputValue('');
+      fetchInventory();
+    } catch (error) {
+       console.error("Error finalizing pending sale:", error);
+       showToast(error instanceof Error ? error.message : 'Error al finalizar la venta pendiente', 'error');
+    } finally {
+       setIsProcessing(false);
+    }
+  };
 
   // Filter products for the catalog
   const filteredProducts = useMemo(() => {
@@ -149,6 +256,21 @@ const POS = () => {
         subtotal: item.product.sellingPrice * item.quantity
       }));
 
+      if (paymentMethod === 'QR_AUTO') {
+        const saleId = await createPendingQRSale(
+          clientName.trim(),
+          saleItems,
+          subtotal,
+          total,
+          Number(globalDiscount) || 0,
+          user?.id,
+          user?.name
+        );
+        setPendingSaleId(saleId);
+        setIsProcessing(false); // Stop standard processing to show modal
+        return;
+      }
+
       await processPOSSale(
         clientName.trim(), // Empty string is handled in the DB layer (defaults to 'Cliente Ocasional')
         saleItems,
@@ -195,7 +317,6 @@ const POS = () => {
     } catch (error) {
       console.error("Error processing sale:", error);
       showToast(error instanceof Error ? error.message : 'Error al procesar la venta', 'error');
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -374,7 +495,7 @@ const POS = () => {
 
             <div>
               <label className="block text-[10px] lg:text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Método de Pago</label>
-              <div className="grid grid-cols-3 gap-2 lg:gap-2">
+              <div className="grid grid-cols-4 gap-2 lg:gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('Cash')}
@@ -398,6 +519,19 @@ const POS = () => {
                 >
                   <CreditCard className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'QR' ? 'text-cyan-500' : 'text-slate-400'}`} />
                   <span>QR / Transf.</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('QR_AUTO')}
+                  className={`flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-1 py-2 lg:py-2 px-2 text-sm lg:text-xs font-medium border-2 lg:border rounded-xl lg:rounded-lg transition-all relative overflow-hidden ${
+                    paymentMethod === 'QR_AUTO'
+                      ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm'
+                      : 'border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <QrCode className={`w-4 h-4 lg:w-5 lg:h-5 ${paymentMethod === 'QR_AUTO' ? 'text-indigo-500' : 'text-slate-400'}`} />
+                  <span>QR Auto</span>
+                  <span className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg">Beta</span>
                 </button>
                 <button
                   type="button"
@@ -518,6 +652,65 @@ const POS = () => {
       </div>
 
     </div>
+
+    {pendingSaleId && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col items-center text-center">
+
+          <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4 relative">
+             <QrCode className="w-8 h-8" />
+             {isProcessing ? (
+               <CheckCircle2 className="w-6 h-6 text-green-500 absolute -bottom-1 -right-1 bg-white rounded-full" />
+             ) : (
+               <Loader2 className="w-6 h-6 animate-spin text-indigo-400 absolute -bottom-1 -right-1 bg-white rounded-full" />
+             )}
+          </div>
+
+          <h3 className="text-xl font-bold text-slate-800 mb-2">
+             Esperando Confirmación
+          </h3>
+          <p className="text-slate-500 text-sm mb-6">
+             Por favor, pide al cliente que escanee el código QR y transfiera exactamente
+             <strong className="text-slate-800 ml-1">Bs. {total.toFixed(2)}</strong>.
+             El ticket se imprimirá solo.
+          </p>
+
+          <div className="text-4xl font-black text-indigo-600 tabular-nums mb-8 tracking-tight">
+            {formatTime(timeLeft)}
+          </div>
+
+          <div className="w-full space-y-3">
+             <button
+               onClick={() => finalizePendingSale(pendingSaleId, true)}
+               disabled={isProcessing}
+               className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+             >
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                Confirmar e Imprimir Manual
+             </button>
+
+             <button
+               onClick={async () => {
+                 setIsProcessing(true);
+                 try {
+                   await cancelPendingQRSale(pendingSaleId);
+                   setPendingSaleId(null);
+                 } catch (e) {
+                   showToast('Error al cancelar la orden', 'error');
+                 } finally {
+                   setIsProcessing(false);
+                 }
+               }}
+               disabled={isProcessing}
+               className="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+             >
+                <XCircle className="w-5 h-5" />
+                Cancelar Venta
+             </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };

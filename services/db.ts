@@ -21,19 +21,59 @@ import { Product, Store, Transfer, Sale, InventoryItem, User, PublicCatalogItem,
 // Helper to get a random ID when not provided
 const generateId = () => doc(collection(db, 'dummy')).id;
 
+export const createPendingQRSale = async (
+  clientName: string,
+  items: { productId: string, name: string, quantity: number, price: number, subtotal: number }[],
+  subtotal: number,
+  total: number,
+  globalDiscount: number,
+  userId?: string,
+  userName?: string,
+): Promise<string> => {
+  const saleId = generateId();
+  const saleRef = doc(db, 'sales', saleId);
+  const now = new Date();
+
+  await setDoc(saleRef, {
+    storeId: 'bodega',
+    clientName: clientName || 'Cliente Ocasional',
+    userId: userId || null,
+    userName: userName || null,
+    items: items,
+    subtotal: subtotal,
+    total: total,
+    discount: globalDiscount,
+    globalDiscount: globalDiscount,
+    paymentMethod: 'QR',
+    amountCash: null,
+    amountQR: total,
+    date: now.toISOString(),
+    timestamp: now.getTime(),
+    status: 'PENDING_QR' // Special status for Beta QR
+  });
+
+  return saleId;
+};
+
+export const cancelPendingQRSale = async (saleId: string): Promise<void> => {
+  await deleteDoc(doc(db, 'sales', saleId));
+};
+
 export const processPOSSale = async (
   clientName: string,
   items: { productId: string, name: string, quantity: number, price: number, subtotal: number }[],
   subtotal: number,
   total: number,
   globalDiscount: number,
-  paymentMethod: 'Cash' | 'QR' | 'Mixto',
+  paymentMethod: 'Cash' | 'QR' | 'Mixto' | 'QR_AUTO',
   userId?: string,
   userName?: string,
   amountCash?: number,
-  amountQR?: number
+  amountQR?: number,
+  existingSaleId?: string,
+  manualConfirmation?: boolean
 ): Promise<void> => {
-  const saleId = generateId();
+  const saleId = existingSaleId || generateId();
   const saleRef = doc(db, 'sales', saleId);
   const now = new Date();
 
@@ -77,8 +117,8 @@ export const processPOSSale = async (
       });
     }
 
-    // 3. Create the Sale record
-    transaction.set(saleRef, {
+    // 3. Create or Update the Sale record
+    const saleData: any = {
       storeId: 'bodega', // Hardcoded single store
       clientName: clientName || 'Cliente Ocasional',
       userId: userId || null,
@@ -88,12 +128,25 @@ export const processPOSSale = async (
       total: total,
       discount: globalDiscount, // Using alias as requested
       globalDiscount: globalDiscount,
-      paymentMethod: paymentMethod,
+      paymentMethod: paymentMethod === 'QR_AUTO' ? 'QR' : paymentMethod,
       amountCash: amountCash ?? null,
       amountQR: amountQR ?? null,
-      date: now.toISOString(),
-      timestamp: now.getTime() // Useful for queries
-    });
+      status: 'PAID'
+    };
+
+    if (manualConfirmation) {
+      saleData.manualConfirmation = true;
+    }
+
+    if (existingSaleId) {
+       // Since it might have been marked PAID by the webhook slightly earlier, we just ensure it's finalized
+       // We only update the necessary fields that are meant to be updated on finalize, though `set` with merge is safer
+       transaction.set(saleRef, saleData, { merge: true });
+    } else {
+       saleData.date = now.toISOString();
+       saleData.timestamp = now.getTime(); // Useful for queries
+       transaction.set(saleRef, saleData);
+    }
   });
 };
 
