@@ -255,8 +255,14 @@ const Inventory = () => {
             onCancelEdit={() => setIsAddProductOpen(false)}
             onAdd={async (product) => {
               try {
-                await addProduct(product as any); // Type assertion needed due to Product vs Omit<Product, 'id'> matching
-                await refreshInventoryLocal();
+                const result = await addProduct(product as any); // Type assertion needed due to Product vs Omit<Product, 'id'> matching
+                const newInvItem = result.inventoryItem;
+                updateLocalInventoryItem(newInvItem);
+                setAllProducts(prev => {
+                  const newProducts = [...prev, newInvItem];
+                  newProducts.sort((a, b) => a.name.localeCompare(b.name));
+                  return newProducts;
+                });
                 showToast('Producto añadido al inventario exitosamente', 'success');
                 setIsAddProductOpen(false);
               } catch (e: any) {

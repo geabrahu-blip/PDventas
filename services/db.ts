@@ -188,7 +188,7 @@ export const adjustProductStock = async (
 };
 
 
-export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
+export const addProduct = async (product: Omit<Product, 'id'>): Promise<{ product: Product, inventoryItem: InventoryItem }> => {
   const newProduct = { ...product };
 
   // Look for existing product in Bodega
@@ -252,7 +252,7 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
   await setDoc(doc(db, 'inventory', invId), sanitizedInvItem);
   await syncToPublicCatalog(sanitizedInvItem);
 
-  return newProductWithId;
+  return { product: newProductWithId, inventoryItem: sanitizedInvItem as InventoryItem };
 };
 
 export const updateProduct = async (updatedProduct: Product, updatePricesAllStores: boolean = false): Promise<Product> => {
