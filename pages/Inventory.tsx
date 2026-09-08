@@ -2,7 +2,7 @@ import ProductForm from "../components/ProductForm";
 import React, { useState, useEffect, useCallback } from 'react';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
-import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, getInventoryItems } from '../services/db';
+import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
 import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2, Barcode as BarcodeIcon } from 'lucide-react';
 import Barcode from 'react-barcode';
 import { useAuth } from '../context/AuthContext';
@@ -13,10 +13,7 @@ import ConfirmModal from '../components/ConfirmModal';
 const Inventory = () => {
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
-  const { updateLocalInventoryItem, removeLocalInventoryItem } = useInventory();
-
-  const [allProducts, setAllProducts] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { inventory: allProducts, isLoading, updateLocalInventoryItem, removeLocalInventoryItem, refreshInventory } = useInventory();
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -41,27 +38,12 @@ const Inventory = () => {
 
 
 
-  const fetchInventory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const items = await getInventoryItems();
+  // Sort products alphabetically (since they come from Context which might not guarantee sorting)
+  const sortedProducts = React.useMemo(() => {
+    return [...allProducts].sort((a, b) => a.name.localeCompare(b.name));
+  }, [allProducts]);
 
-      // Sort alphabetically by name
-      items.sort((a, b) => a.name.localeCompare(b.name));
-
-      setAllProducts(items);
-    } catch (error) {
-      console.error("Error loading inventory:", error);
-      showToast("Error al cargar el inventario", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showToast]);
-
-  useEffect(() => { fetchInventory(); }, [fetchInventory]);
-
-  const refreshInventoryLocal = () => fetchInventory();
-
+  const refreshInventoryLocal = () => refreshInventory();
 
   // Safe default to prevent length/map crashes on completely undefined inventory
   // const products managed locally now
@@ -185,7 +167,7 @@ const Inventory = () => {
   const searchLower = safeToLower(inputValue);
 
   // Filter products synchronously based on inputValue
-  const filteredProducts = allProducts.filter(p =>
+  const filteredProducts = sortedProducts.filter(p =>
     safeToLower(p.name).includes(searchLower) ||
     safeToLower(p.barcode).includes(searchLower) ||
     safeToLower(p.brand).includes(searchLower) ||
