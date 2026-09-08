@@ -136,7 +136,6 @@ const POS = () => {
       setGlobalDiscount('');
       setPaymentMethod('Cash');
       setInputValue('');
-      fetchInventory();
     } catch (error) {
        console.error("Error finalizing pending sale:", error);
        showToast(error instanceof Error ? error.message : 'Error al finalizar la venta pendiente', 'error');
@@ -303,9 +302,6 @@ const POS = () => {
       setMixedAmountQR('');
       setMixedAmountCash('');
       setInputValue('');
-
-      // Refresh global inventory to reflect new stock
-      fetchInventory();
 
     } catch (error) {
       console.error("Error processing sale:", error);
