@@ -28,10 +28,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const response = await getInventoryItems(null, 50);
-      setInventory(response.items);
-      setLastDoc(response.lastDoc);
-      setHasMore(response.lastDoc !== null);
+      // Load ALL items up front as desired, ignoring pagination logic to restore smooth functionality
+      const items = await getInventoryItems();
+      setInventory(items);
+      setLastDoc(null);
+      setHasMore(false);
     } catch (error) {
       console.error("Error initial loading inventory:", error);
     } finally {
@@ -52,17 +53,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
 
     setIsFetchingMore(true);
     try {
-      const response = await getInventoryItems(lastDoc, 50);
-
-      setInventory(prev => {
-        // Filter out duplicates just in case
-        const existingIds = new Set(prev.map(i => i.id));
-        const newItems = response.items.filter(item => !existingIds.has(item.id));
-        return [...prev, ...newItems];
-      });
-
-      setLastDoc(response.lastDoc);
-      setHasMore(response.lastDoc !== null);
+      // Paginated load is disabled in favor of full initial load
     } catch (error) {
       console.error("Error fetching more inventory:", error);
     } finally {

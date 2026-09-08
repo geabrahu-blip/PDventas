@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
-import { getInventoryItems } from '../services/db';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { useInventory } from '../context/InventoryContext';
 import { processPOSSale, createPendingQRSale, cancelPendingQRSale } from '../services/db';
 import { db } from '../services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -17,28 +17,7 @@ interface CartItem {
 }
 
 const POS = () => {
-  const [products, setProducts] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchInventory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const items = await getInventoryItems();
-      setProducts(items);
-    } catch (error) {
-      console.error("Error loading inventory:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Wrap initial fetch in setTimeout to avoid React concurrent rendering issues
-    const timer = setTimeout(() => {
-      fetchInventory();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchInventory]);
+  const { inventory: products, isLoading } = useInventory();
 
   const { showToast } = useToast();
   const { user } = useAuth();
