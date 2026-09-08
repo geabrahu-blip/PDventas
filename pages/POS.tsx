@@ -144,28 +144,13 @@ const POS = () => {
       });
 
       // Reset
-      // Local state update instead of fetchInventory()
-      setProducts(prevProducts => {
-        const updated = [...prevProducts];
-        cart.forEach(cartItem => {
-          const index = updated.findIndex(p => p.id === cartItem.product.id);
-          if (index !== -1) {
-            updated[index] = {
-              ...updated[index],
-              units: updated[index].units - cartItem.quantity
-            };
-          }
-        });
-        return updated;
-      });
-
-      // Reset
       setPendingSaleId(null);
       setCart([]);
       setClientName('');
       setGlobalDiscount('');
       setPaymentMethod('Cash');
       setInputValue('');
+      fetchInventory();
     } catch (error) {
        console.error("Error finalizing pending sale:", error);
        showToast(error instanceof Error ? error.message : 'Error al finalizar la venta pendiente', 'error');
@@ -317,21 +302,6 @@ const POS = () => {
         amountQR: paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
       });
 
-      // Local state update instead of fetchInventory()
-      setProducts(prevProducts => {
-        const updated = [...prevProducts];
-        cart.forEach(cartItem => {
-          const index = updated.findIndex(p => p.id === cartItem.product.id);
-          if (index !== -1) {
-            updated[index] = {
-              ...updated[index],
-              units: updated[index].units - cartItem.quantity
-            };
-          }
-        });
-        return updated;
-      });
-
       // Reset POS state
       setCart([]);
       setClientName('');
@@ -340,6 +310,9 @@ const POS = () => {
       setMixedAmountQR('');
       setMixedAmountCash('');
       setInputValue('');
+
+      // Refresh global inventory to reflect new stock
+      fetchInventory();
 
     } catch (error) {
       console.error("Error processing sale:", error);
