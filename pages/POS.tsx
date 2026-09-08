@@ -17,7 +17,7 @@ interface CartItem {
 }
 
 const POS = () => {
-  const { inventory: products, isLoading } = useInventory();
+  const { inventory: products, isLoading, updateMultipleLocalInventoryItems } = useInventory();
 
   const { showToast } = useToast();
   const { user } = useAuth();
@@ -106,6 +106,13 @@ const POS = () => {
         saleId,
         isManual
       );
+
+      // Descontar inventario localmente para UI instanánea
+      const updatedProducts = cart.map(item => ({
+        ...item.product,
+        units: Math.max(0, item.product.units - item.quantity)
+      }));
+      updateMultipleLocalInventoryItems(updatedProducts);
 
       showToast(isManual ? 'Pago confirmado manualmente' : 'Pago confirmado por webhook', 'success');
 
@@ -262,6 +269,13 @@ const POS = () => {
         paymentMethod === 'Mixto' ? Number(mixedAmountCash) || 0 : undefined,
         paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
       );
+
+      // Descontar inventario localmente para UI instanánea
+      const updatedProducts = cart.map(item => ({
+        ...item.product,
+        units: Math.max(0, item.product.units - item.quantity)
+      }));
+      updateMultipleLocalInventoryItems(updatedProducts);
 
       showToast('Venta procesada exitosamente', 'success');
 
