@@ -6,10 +6,12 @@ import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { getLocalDateString } from '../utils/dateUtils';
+import { useInventory } from '../context/InventoryContext';
 
 const SalesReport = () => {
   const { showToast } = useToast();
   const { isAdmin } = useAuth();
+  const { refreshInventory } = useInventory();
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
 
@@ -45,6 +47,10 @@ const SalesReport = () => {
     try {
       showToast('Anulando venta...', 'info');
       await cancelSale(saleToDelete.id, saleToDelete.items);
+
+      // Actualizar inventario local para reflejar la devolución del stock en otras vistas
+      refreshInventory();
+
       showToast('Venta anulada correctamente. Stock devuelto.', 'success');
       loadData();
     } catch (error) {
