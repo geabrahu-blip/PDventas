@@ -252,6 +252,19 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
   await setDoc(doc(db, 'inventory', invId), sanitizedInvItem);
   await syncToPublicCatalog(sanitizedInvItem);
 
+  // Create Kardex log for initial stock if > 0
+  if (newProductWithId.units > 0) {
+    const kardexRef = doc(db, 'kardex_logs', generateId());
+    await setDoc(kardexRef, {
+      productId: id,
+      quantity: newProductWithId.units,
+      date: new Date().toISOString().split('T')[0],
+      reason: 'Inventario inicial',
+      timestamp: new Date().getTime(),
+      type: 'ENTRADA'
+    });
+  }
+
   return newProductWithId;
 };
 
@@ -322,6 +335,18 @@ export const updateProduct = async (updatedProduct: Product, updatePricesAllStor
     const sanitizedUpdatedInv = JSON.parse(JSON.stringify(updatedInv));
     await setDoc(doc(db, 'inventory', inv.id), sanitizedUpdatedInv);
     await syncToPublicCatalog(sanitizedUpdatedInv);
+  }
+
+  if (unitDifference !== 0) {
+    const kardexRef = doc(db, 'kardex_logs', generateId());
+    await setDoc(kardexRef, {
+      productId: updatedProduct.id,
+      quantity: Math.abs(unitDifference),
+      date: new Date().toISOString().split('T')[0],
+      reason: 'Ajuste por edición',
+      timestamp: new Date().getTime(),
+      type: unitDifference > 0 ? 'ENTRADA' : 'SALIDA'
+    });
   }
 
   return updatedProduct;

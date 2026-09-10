@@ -80,7 +80,6 @@ const Inventory = () => {
         units: selectedAdjustItem.units + Number(adjustQuantity)
       };
       updateLocalInventoryItem(updatedItem);
-      setAllProducts(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
 
       setIsAdjustModalOpen(false);
       setSelectedAdjustItem(null);
@@ -108,7 +107,6 @@ const Inventory = () => {
       setIsEditModalOpen(false);
       setEditItem(null);
       updateLocalInventoryItem(updatedItem);
-      setAllProducts(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
       showToast('Producto actualizado con éxito', 'success');
     } catch (error) {
       console.error('Error updating product:', error);
@@ -144,7 +142,6 @@ const Inventory = () => {
     try {
       await deleteInventoryItem(itemToDelete);
       removeLocalInventoryItem(itemToDelete);
-      setAllProducts(prev => prev.filter(p => p.id !== itemToDelete));
       showToast('Registro eliminado del inventario', 'info');
     } catch (error) {
       console.error('Error deleting item:', error);
