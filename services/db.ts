@@ -856,6 +856,34 @@ export const deleteSale = async (id: string): Promise<void> => {
 };
 
 
+import { RestockItem } from '../types';
+
+export const getRestockItems = async (): Promise<RestockItem[]> => {
+  const q = query(collection(db, 'restock_list'), orderBy('createdAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => doc.data() as RestockItem);
+};
+
+export const addRestockItem = async (item: Omit<RestockItem, 'id' | 'createdAt'>): Promise<RestockItem> => {
+  const id = generateId();
+  const newItem: RestockItem = {
+    ...item,
+    id,
+    createdAt: Date.now()
+  };
+  await setDoc(doc(db, 'restock_list', id), newItem);
+  return newItem;
+};
+
+export const updateRestockItem = async (item: RestockItem): Promise<RestockItem> => {
+  await updateDoc(doc(db, 'restock_list', item.id), { ...item });
+  return item;
+};
+
+export const deleteRestockItem = async (id: string): Promise<void> => {
+  await deleteDoc(doc(db, 'restock_list', id));
+};
+
 export const getAllPublicInventoryItems = async () => {
   try {
     const publicCatalogRef = collection(db, 'public_catalog');
