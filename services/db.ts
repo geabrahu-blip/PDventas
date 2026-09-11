@@ -739,22 +739,35 @@ export const processBulkTransfer = async (
 };
 
 // Sales
-export const getSales = async (dateStr?: string): Promise<Sale[]> => {
+export const getSales = async (startDateStr?: string, endDateStr?: string): Promise<Sale[]> => {
   let q;
-  if (dateStr) {
-    // Treat dateStr as local time (YYYY-MM-DD)
-    // Create start of day in local time
-    const [year, month, day] = dateStr.split('-').map(Number);
+
+  if (startDateStr && endDateStr) {
+    // Treat dates as local time (YYYY-MM-DD)
+    const [startYear, startMonth, startDay] = startDateStr.split('-').map(Number);
+    const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
+
+    const startObj = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+    const endObj = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+
+    q = query(
+      collection(db, 'sales'),
+      where('date', '>=', startObj.toISOString()),
+      where('date', '<=', endObj.toISOString())
+    );
+  } else if (startDateStr) {
+    // Fallback for single date (used by vendor view)
+    const [year, month, day] = startDateStr.split('-').map(Number);
     const startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
     const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-    // We use the ISO string of the local start and end dates to query the "date" field
     q = query(
       collection(db, 'sales'),
       where('date', '>=', startDate.toISOString()),
       where('date', '<=', endDate.toISOString())
     );
   } else {
+    // All sales
     q = query(collection(db, 'sales'));
   }
 

@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Sale } from '../types';
 import { getSales, cancelSale } from '../services/db';
-import { FileText, Calendar, DollarSign, Trash2 } from 'lucide-react';
+import { FileText, Calendar, DollarSign, Trash2, Search } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, getYesterdayDateString, getThisWeekRange, getThisMonthRange } from '../utils/dateUtils';
 import { useInventory } from '../context/InventoryContext';
 
 const SalesReport = () => {
@@ -13,28 +13,82 @@ const SalesReport = () => {
   const { isAdmin } = useAuth();
   const { refreshInventory } = useInventory();
   const [sales, setSales] = useState<Sale[]>([]);
-  const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
 
   // Filters
-  const [filterDate, setFilterDate] = useState<string>(() => getLocalDateString());
+  const [startDate, setStartDate] = useState<string>(() => getLocalDateString());
+  const [endDate, setEndDate] = useState<string>(() => getLocalDateString());
+  // Active quick filter to style buttons
+  const [activeFilter, setActiveFilter] = useState<'hoy' | 'ayer' | 'semana' | 'mes' | 'todas' | 'custom'>('hoy');
 
   const loadData = useCallback(async () => {
     try {
-      const salesData = await getSales(filterDate || undefined);
-      setSales(salesData);
-      setFilteredSales(salesData); // We no longer need applyFilters since the query is already filtered
+      // Vendors strictly see today
+      if (!isAdmin) {
+        const today = getLocalDateString();
+        const salesData = await getSales(today, today);
+        setSales(salesData);
+        return;
+      }
+
+      // Admin sees based on range
+      if (activeFilter === 'todas') {
+        const salesData = await getSales();
+        setSales(salesData);
+      } else {
+        const salesData = await getSales(startDate, endDate);
+        setSales(salesData);
+      }
     } catch (error) {
       console.error('Error loading sales:', error);
       showToast('Error al cargar ventas', 'error');
     }
-  }, [showToast, filterDate]);
+  }, [showToast, startDate, endDate, isAdmin, activeFilter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const setFilterHoy = () => {
+    const today = getLocalDateString();
+    setStartDate(today);
+    setEndDate(today);
+    setActiveFilter('hoy');
+  };
+
+  const setFilterAyer = () => {
+    const ayer = getYesterdayDateString();
+    setStartDate(ayer);
+    setEndDate(ayer);
+    setActiveFilter('ayer');
+  };
+
+  const setFilterSemana = () => {
+    const { start, end } = getThisWeekRange();
+    setStartDate(start);
+    setEndDate(end);
+    setActiveFilter('semana');
+  };
+
+  const setFilterMes = () => {
+    const { start, end } = getThisMonthRange();
+    setStartDate(start);
+    setEndDate(end);
+    setActiveFilter('mes');
+  };
+
+  const setFilterTodas = () => {
+    setStartDate('');
+    setEndDate('');
+    setActiveFilter('todas');
+  };
+
+  const handleCustomReport = () => {
+    setActiveFilter('custom');
+    loadData();
+  };
 
   const handleDeleteClick = (sale: Sale) => {
     setSaleToDelete(sale);
@@ -62,81 +116,170 @@ const SalesReport = () => {
     }
   };
 
-  const totalSalesAmount = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalSalesAmount = sales.reduce((sum, sale) => sum + sale.total, 0);
 
-  const totalCashSales = filteredSales.reduce((sum, sale) => {
+  const totalCashSales = sales.reduce((sum, sale) => {
     if (sale.paymentMethod === 'Cash') return sum + sale.total;
     if (sale.paymentMethod === 'Mixto' && sale.amountCash) return sum + sale.amountCash;
     return sum;
   }, 0);
 
-  const totalQRSales = filteredSales.reduce((sum, sale) => {
+  const totalQRSales = sales.reduce((sum, sale) => {
     if (sale.paymentMethod === 'QR') return sum + sale.total;
     if (sale.paymentMethod === 'Mixto' && sale.amountQR) return sum + sale.amountQR;
     return sum;
   }, 0);
 
+  // Used to display the header dynamically
+  const displayTitle = useMemo(() => {
+    if (!isAdmin) return 'Ventas de Hoy';
+
+    if (activeFilter === 'todas') return 'Todas las Ventas';
+    if (startDate === endDate) return `Ventas en ${new Date(startDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+    return `Ventas desde ${new Date(startDate + 'T12:00:00').toLocaleDateString('es-ES')} hasta ${new Date(endDate + 'T12:00:00').toLocaleDateString('es-ES')}`;
+  }, [isAdmin, activeFilter, startDate, endDate]);
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FileText className="w-6 h-6 text-teal-600" />
-          Reporte de Ventas
+        <h1 className="text-2xl font-bold text-gray-900">
+          {displayTitle}
         </h1>
       </div>
 
-      {/* Filters / Headers */}
+      {/* Filters Interface (Only Admin) */}
       {isAdmin ? (
-        <div className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <Calendar className="w-4 h-4" /> Fecha
-            </label>
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
-            />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-slate-50 px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-indigo-600" />
+            <h2 className="font-semibold text-gray-800">Filtrar Ventas por Período</h2>
           </div>
 
-          <button
-            onClick={() => setFilterDate('')}
-            className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md"
-          >
-            Limpiar Filtro
-          </button>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-4">
+            {/* Quick Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-3">Selección Rápida</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={setFilterHoy}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm ${activeFilter === 'hoy' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                >
+                  <Calendar className="w-4 h-4" /> Hoy
+                </button>
+                <button
+                  onClick={setFilterAyer}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm ${activeFilter === 'ayer' ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
+                >
+                  <Calendar className="w-4 h-4" /> Ayer
+                </button>
+                <button
+                  onClick={setFilterSemana}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm ${activeFilter === 'semana' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                >
+                  <Calendar className="w-4 h-4" /> Semana
+                </button>
+                <button
+                  onClick={setFilterMes}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm ${activeFilter === 'mes' ? 'bg-purple-700 text-white hover:bg-purple-800' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                >
+                  <Calendar className="w-4 h-4" /> Mes
+                </button>
+                <button
+                  onClick={setFilterTodas}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm ${activeFilter === 'todas' ? 'bg-green-700 text-white hover:bg-green-800' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                >
+                  <Search className="w-4 h-4" /> Todas
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Period */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-3">Período Personalizado</label>
+              <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[11px] font-medium text-gray-500 mb-1">Fecha Inicio *</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setActiveFilter('custom');
+                      }}
+                      className="w-full border-gray-200 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm py-2 px-3"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[11px] font-medium text-gray-500 mb-1">Fecha Fin *</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setActiveFilter('custom');
+                      }}
+                      className="w-full border-gray-200 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm py-2 px-3"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleCustomReport}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Search className="w-4 h-4" /> Generar Reporte
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">
+            <span>Período seleccionado: {activeFilter !== 'todas' ? `${startDate} - ${endDate}` : 'Todos los registros'}</span>
+            <span className="text-indigo-600 font-medium">Reporte en tiempo real</span>
+          </div>
         </div>
       ) : (
         <div className="bg-teal-50 p-4 rounded-lg border border-teal-100 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-teal-600" />
-          <span className="text-teal-800 font-medium">Ventas de Hoy</span>
+          <span className="text-teal-800 font-medium">Estás visualizando las ventas de hoy.</span>
         </div>
       )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-teal-500 flex flex-col justify-center">
-          <p className="text-sm font-medium text-gray-500">Total Neto (Filtro Actual)</p>
-          <p className="text-2xl font-bold text-gray-900 flex items-center gap-2 mt-1">
-            <DollarSign className="w-5 h-5 text-teal-500" /> Bs. {(totalSalesAmount || 0).toFixed(2)}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
+          <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+             Total Ventas QR
+          </p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">
+            Bs. {(totalQRSales || 0).toFixed(2)}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500 flex flex-col justify-center">
-          <p className="text-sm font-medium text-gray-500">Total Efectivo</p>
-          <p className="text-2xl font-bold text-green-600 flex items-center gap-2 mt-1">
-            <DollarSign className="w-5 h-5 text-green-500" /> Bs. {(totalCashSales || 0).toFixed(2)}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
+          <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+             Total Ventas Efectivo
+          </p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">
+            Bs. {(totalCashSales || 0).toFixed(2)}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500 flex flex-col justify-center">
-          <p className="text-sm font-medium text-gray-500">Total QR</p>
-          <p className="text-2xl font-bold text-purple-600 flex items-center gap-2 mt-1">
-            <DollarSign className="w-5 h-5 text-purple-500" /> Bs. {(totalQRSales || 0).toFixed(2)}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
+           <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+             Ventas Realizadas
+          </p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">
+            {sales.length}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-cyan-500 flex flex-col justify-center">
-          <p className="text-sm font-medium text-gray-500">Ventas Realizadas</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{filteredSales.length}</p>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
+          <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+             Total Neto
+          </p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">
+            Bs. {(totalSalesAmount || 0).toFixed(2)}
+          </p>
         </div>
       </div>
 
@@ -169,7 +312,7 @@ const SalesReport = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredSales.map((sale) => (
+              {sales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                     {new Date(sale.date).toLocaleString()}
@@ -220,7 +363,7 @@ const SalesReport = () => {
                   </td>
                 </tr>
               ))}
-              {filteredSales.length === 0 && (
+              {sales.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron ventas para los filtros seleccionados.
