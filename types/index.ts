@@ -126,3 +126,16 @@ export interface KardexLog {
   timestamp: number;
   type: 'ENTRADA' | 'SALIDA' | 'AJUSTE';
 }
+
+export type RestockStatus = 'PENDIENTE' | 'COMPRADO' | 'COMPRADO_PARCIAL' | 'AGOTADO_PROVEEDOR';
+
+export interface RestockItem {
+  id: string;
+  productId?: string; // Optional because they can add a free-text item
+  productName: string;
+  requestedQuantity: number;
+  status: RestockStatus;
+  adminNotes?: string;
+  createdAt: number;
+  createdBy: string; // User name or ID who requested it
+}
