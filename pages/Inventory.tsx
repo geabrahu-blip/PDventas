@@ -1,9 +1,10 @@
 import ProductForm from "../components/ProductForm";
+import PrepareDecantsModal from '../components/inventory/PrepareDecantsModal';
 import React, { useState, useEffect, useCallback } from 'react';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 import { InventoryItem } from '../types';
-import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock } from '../services/db';
-import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2, Barcode as BarcodeIcon } from 'lucide-react';
+import { updateInventoryItem, deleteInventoryItem, syncAllToPublicCatalog, addProduct, adjustProductStock, prepareDecants } from '../services/db';
+import { Package, Search, Trash2, Edit3, Plus, RefreshCw, Box, Loader2, Droplet, Barcode as BarcodeIcon } from 'lucide-react';
 import Barcode from 'react-barcode';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
@@ -35,6 +36,10 @@ const Inventory = () => {
   const [adjustDate, setAdjustDate] = useState(new Date().toISOString().split('T')[0]);
   const [adjustReason, setAdjustReason] = useState('');
 
+  // Decants State
+  const [selectedDecantProduct, setSelectedDecantProduct] = useState<InventoryItem | null>(null);
+  const [isDecantModalOpen, setIsDecantModalOpen] = useState(false);
+
 
 
 
@@ -61,6 +66,23 @@ const Inventory = () => {
     setAdjustDate(new Date().toISOString().split('T')[0]);
     setAdjustReason('');
     setIsAdjustModalOpen(true);
+  };
+
+  const handleOpenDecant = (product: InventoryItem) => {
+    setSelectedDecantProduct(product);
+    setIsDecantModalOpen(true);
+  };
+
+  const handleDecantConfirm = async (d5: number, d10: number, d30: number) => {
+    if (!selectedDecantProduct) return;
+    try {
+      const updated = await prepareDecants(selectedDecantProduct.id, d5, d10, d30);
+      updateLocalInventoryItem(updated);
+      showToast('Decants preparados con éxito', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Error al preparar decants', 'error');
+      throw error;
+    }
   };
 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
@@ -364,6 +386,16 @@ const Inventory = () => {
                 </td>
                 <td className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
+                    {isAdmin && product.categoryType === 'Perfumes' && product.hasDecants && (
+                      <button
+                        onClick={() => handleOpenDecant(product)}
+                        className="inline-flex items-center p-1.5 text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                        title="Preparar Decants"
+                      >
+                        <Droplet className="w-4 h-4" />
+                      </button>
+                    )}
+
                     {isAdmin && (
                       <button
                         onClick={() => handleOpenAdjust(product)}
@@ -454,6 +486,15 @@ const Inventory = () => {
                 </div>
 
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                  {isAdmin && product.categoryType === 'Perfumes' && product.hasDecants && (
+                    <button
+                      onClick={() => handleOpenDecant(product)}
+                      className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Droplet className="w-4 h-4" /> Decants
+                    </button>
+                  )}
+
                   {isAdmin && (
                     <button
                       onClick={() => handleOpenAdjust(product)}
@@ -485,6 +526,13 @@ const Inventory = () => {
           />
         )}
       </div>
+
+      <PrepareDecantsModal
+        isOpen={isDecantModalOpen}
+        onClose={() => setIsDecantModalOpen(false)}
+        product={selectedDecantProduct}
+        onConfirm={handleDecantConfirm}
+      />
 
       {/* Adjust Stock Modal */}
       {isAdjustModalOpen && selectedAdjustItem && (

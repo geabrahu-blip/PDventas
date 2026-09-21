@@ -1,170 +1,170 @@
 import React, { useState } from 'react';
 import { InventoryItem } from '../../types';
-import { X, Beaker, CheckCircle } from 'lucide-react';
-import { useToast } from '../../context/ToastContext';
+import { Droplet, X } from 'lucide-react';
 
 interface PrepareDecantsModalProps {
-  product: InventoryItem;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: { count5ml: number; count10ml: number; count30ml: number }) => Promise<void>;
+  product: InventoryItem | null;
+  onConfirm: (d5: number, d10: number, d30: number) => Promise<void>;
 }
 
-export default function PrepareDecantsModal({ product, isOpen, onClose, onConfirm }: PrepareDecantsModalProps) {
-  const { showToast } = useToast();
-  const [count5ml, setCount5ml] = useState(0);
-  const [count10ml, setCount10ml] = useState(0);
-  const [count30ml, setCount30ml] = useState(0);
+export default function PrepareDecantsModal({ isOpen, onClose, product, onConfirm }: PrepareDecantsModalProps) {
+  const [d5, setD5] = useState<number | ''>('');
+  const [d10, setD10] = useState<number | ''>('');
+  const [d30, setD30] = useState<number | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !product) return null;
 
-  // Extract numeric capacity from strings like '100 ml'
-  const capacityMatch = product.capacity?.match(/(\d+)/);
-  const capacityMl = capacityMatch ? parseInt(capacityMatch[0], 10) : 0;
+  const totalMlNeeded = (Number(d5 || 0) * 5) + (Number(d10 || 0) * 10) + (Number(d30 || 0) * 30);
+  const currentOpenedMl = product.openedBottleMl || 0;
 
-  const currentRemaining = product.openedBottle?.remainingMl || 0;
-  const totalAvailableMl = capacityMl + currentRemaining; // Opening 1 new bottle + current opened bottle
+  // Try to parse capacity (e.g. "100ml" or "100 ml" -> 100)
+  const capacityMatch = product.capacity?.match(/\d+/);
+  const bottleCapacity = capacityMatch ? parseInt(capacityMatch[0], 10) : 0;
 
-  const mlToUse = (count5ml * 5) + (count10ml * 10) + (count30ml * 30);
-  const remainingAfterPreparation = totalAvailableMl - mlToUse;
+  let bottlesToOpen = 0;
+  let remainingAfterOpen = currentOpenedMl;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  if (totalMlNeeded > currentOpenedMl) {
+    if (bottleCapacity > 0) {
+      const deficit = totalMlNeeded - currentOpenedMl;
+      bottlesToOpen = Math.ceil(deficit / bottleCapacity);
+      remainingAfterOpen = (currentOpenedMl + (bottlesToOpen * bottleCapacity)) - totalMlNeeded;
+    }
+  } else {
+    remainingAfterOpen = currentOpenedMl - totalMlNeeded;
+  }
+
+  const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (product.units < 1 && currentRemaining < mlToUse) {
-      showToast('No hay stock de botellas selladas para abrir.', 'error');
-      return;
-    }
-
-    if (capacityMl === 0 && currentRemaining === 0) {
-      showToast('El producto no tiene una capacidad válida en ml.', 'error');
-      return;
-    }
-
-    if (mlToUse === 0) {
-      showToast('Debes preparar al menos 1 decant.', 'error');
-      return;
-    }
-
-    if (remainingAfterPreparation < 0) {
-      showToast('No hay suficientes mililitros para esa cantidad de decants.', 'error');
-      return;
-    }
-
+    if (!d5 && !d10 && !d30) return;
     setIsSubmitting(true);
     try {
-      await onConfirm({ count5ml, count10ml, count30ml });
-      setCount5ml(0);
-      setCount10ml(0);
-      setCount30ml(0);
+      await onConfirm(Number(d5 || 0), Number(d10 || 0), Number(d30 || 0));
       onClose();
+      setD5(''); setD10(''); setD30('');
     } catch (error) {
-      console.error(error);
-      showToast('Error al preparar decants', 'error');
+      // Error handled by parent
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isInvalid = bottleCapacity === 0 && totalMlNeeded > currentOpenedMl;
+  const insufficientStock = bottlesToOpen > product.units;
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-teal-100 text-teal-600 rounded-lg">
-              <Beaker className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold text-gray-900">Preparar Decants</h2>
-          </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-full">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-teal-50">
+          <h2 className="text-xl font-semibold text-teal-900 flex items-center gap-2">
+            <Droplet className="w-5 h-5 text-teal-600" />
+            Preparar Decants
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-4 flex-1 overflow-y-auto">
-          <div className="mb-4 text-sm text-gray-600">
-            Producto: <span className="font-semibold text-gray-900">{product.name}</span>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800 mb-6">
-            Al confirmar, se abrirá <strong>1 botella sellada ({capacityMl}ml)</strong>.
-            El remanente actual es <strong>{currentRemaining}ml</strong>.
-            Total disponible para usar: <strong>{totalAvailableMl}ml</strong>.
-          </div>
-
-          <form id="decants-form" onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex justify-between items-center p-3 border border-gray-200 rounded-lg">
-              <div>
-                <span className="block font-medium text-gray-900">Decants 5ml</span>
-                <span className="text-xs text-gray-500">Stock actual: {product.decants?.['5ml']?.stock || 0}</span>
-              </div>
-              <input
-                type="number"
-                min="0"
-                value={count5ml}
-                onChange={(e) => setCount5ml(parseInt(e.target.value) || 0)}
-                className="w-20 text-center border border-gray-300 rounded-lg py-1 px-2"
-              />
+        <form onSubmit={handleConfirm} className="p-6 space-y-5">
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+            <p className="font-semibold text-gray-900">{product.name}</p>
+            <div className="flex justify-between mt-2 text-sm">
+              <span className="text-gray-600">Botellas selladas: <strong className="text-gray-900">{product.units}</strong></span>
+              <span className="text-gray-600">Capacidad: <strong className="text-gray-900">{bottleCapacity ? `${bottleCapacity}ml` : 'Inválida'}</strong></span>
             </div>
-            <div className="flex justify-between items-center p-3 border border-gray-200 rounded-lg">
-              <div>
-                <span className="block font-medium text-gray-900">Decants 10ml</span>
-                <span className="text-xs text-gray-500">Stock actual: {product.decants?.['10ml']?.stock || 0}</span>
-              </div>
-              <input
-                type="number"
-                min="0"
-                value={count10ml}
-                onChange={(e) => setCount10ml(parseInt(e.target.value) || 0)}
-                className="w-20 text-center border border-gray-300 rounded-lg py-1 px-2"
-              />
-            </div>
-            <div className="flex justify-between items-center p-3 border border-gray-200 rounded-lg">
-              <div>
-                <span className="block font-medium text-gray-900">Decants 30ml</span>
-                <span className="text-xs text-gray-500">Stock actual: {product.decants?.['30ml']?.stock || 0}</span>
-              </div>
-              <input
-                type="number"
-                min="0"
-                value={count30ml}
-                onChange={(e) => setCount30ml(parseInt(e.target.value) || 0)}
-                className="w-20 text-center border border-gray-300 rounded-lg py-1 px-2"
-              />
-            </div>
-          </form>
-
-          <div className="mt-6 border-t border-gray-100 pt-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Mililitros a utilizar:</span>
-              <span className="font-semibold text-gray-900">{mlToUse}ml</span>
-            </div>
-            <div className={`flex justify-between text-sm ${remainingAfterPreparation < 0 ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
-              <span>Mililitros que quedarán (Frasco abierto):</span>
-              <span>{remainingAfterPreparation}ml</span>
+            <div className="flex justify-between mt-1 text-sm">
+              <span className="text-gray-600">Líquido abierto actual:</span>
+              <strong className="text-yellow-600">{currentOpenedMl}ml</strong>
             </div>
           </div>
-        </div>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            form="decants-form"
-            disabled={isSubmitting || remainingAfterPreparation < 0 || mlToUse === 0}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            <CheckCircle className="w-4 h-4" />
-            {isSubmitting ? 'Procesando...' : 'Confirmar'}
-          </button>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">¿Cuántos decants vas a preparar ahora?</label>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Decants 5ml</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={d5}
+                  onChange={(e) => setD5(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Decants 10ml</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={d10}
+                  onChange={(e) => setD10(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Decants 30ml</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={d30}
+                  onChange={(e) => setD30(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-lg border ${insufficientStock || isInvalid ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+            <h4 className="text-sm font-semibold mb-2 flex items-center justify-between">
+              Resumen de Operación
+              <span className="text-xs font-normal">Requiere: {totalMlNeeded}ml</span>
+            </h4>
+            <ul className="text-sm space-y-1">
+              <li className="flex justify-between">
+                <span>Botellas nuevas a abrir:</span>
+                <strong className={bottlesToOpen > 0 ? 'text-blue-700' : ''}>{bottlesToOpen}</strong>
+              </li>
+              <li className="flex justify-between">
+                <span>Líquido sobrante:</span>
+                <strong>{remainingAfterOpen}ml</strong>
+              </li>
+            </ul>
+            {insufficientStock && (
+              <p className="text-xs text-red-600 mt-2 font-medium">
+                No tienes suficientes botellas selladas para abrir ({bottlesToOpen} requeridas, {product.units} disponibles).
+              </p>
+            )}
+            {isInvalid && (
+              <p className="text-xs text-red-600 mt-2 font-medium">
+                La capacidad de este perfume no es válida. Asegúrate de que el campo "Presentación" (ej. 100ml) contenga un número en la edición del producto.
+              </p>
+            )}
+          </div>
+
+          <div className="pt-4 flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || totalMlNeeded === 0 || isInvalid || insufficientStock}
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Procesando...' : 'Confirmar Preparación'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
