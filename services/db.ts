@@ -150,6 +150,100 @@ export const processPOSSale = async (
   });
 };
 
+export const prepareDecants = async (
+  inventoryId: string,
+  d5: number,
+  d10: number,
+  d30: number
+): Promise<InventoryItem> => {
+  const invRef = doc(db, 'inventory', inventoryId);
+  const invSnap = await getDoc(invRef);
+  if (!invSnap.exists()) throw new Error('Producto no encontrado en inventario');
+
+  const item = invSnap.data() as InventoryItem;
+  if (item.categoryType !== 'Perfumes' || !item.hasDecants) {
+    throw new Error('El producto no tiene decants habilitados.');
+  }
+
+  const totalMlNeeded = (d5 * 5) + (d10 * 10) + (d30 * 30);
+  let currentOpenedMl = item.openedBottleMl || 0;
+  let bottlesToOpen = 0;
+
+  const capacityMatch = item.capacity?.match(/\d+/);
+  const bottleCapacity = capacityMatch ? parseInt(capacityMatch[0], 10) : 0;
+
+  if (totalMlNeeded > currentOpenedMl) {
+    if (bottleCapacity <= 0) {
+      throw new Error('Capacidad del perfume inválida. No se puede calcular cuántas botellas abrir.');
+    }
+    const deficit = totalMlNeeded - currentOpenedMl;
+    bottlesToOpen = Math.ceil(deficit / bottleCapacity);
+
+    if (item.units < bottlesToOpen) {
+      throw new Error(`Stock insuficiente. Necesitas abrir ${bottlesToOpen} botellas selladas, pero solo tienes ${item.units}.`);
+    }
+  }
+
+  // Calculate new state
+  const newUnits = item.units - bottlesToOpen;
+  const newOpenedMl = (currentOpenedMl + (bottlesToOpen * bottleCapacity)) - totalMlNeeded;
+
+  const updatedItem = {
+    ...item,
+    units: newUnits,
+    openedBottleMl: newOpenedMl,
+    decants5ml: (item.decants5ml || 0) + d5,
+    decants10ml: (item.decants10ml || 0) + d10,
+    decants30ml: (item.decants30ml || 0) + d30,
+  };
+
+  const batch = writeBatch(db);
+  batch.set(invRef, updatedItem);
+
+  // Update public catalog
+  const publicItem: PublicCatalogItem = { ...updatedItem };
+  delete (publicItem as any).priceBs;
+  delete (publicItem as any).wholesalePrice;
+  batch.set(doc(db, 'public_catalog', inventoryId), publicItem);
+
+  // Update products collection as well to keep units in sync
+  if (item.productId) {
+    const prodRef = doc(db, 'products', item.productId);
+    const prodSnap = await getDoc(prodRef);
+    if (prodSnap.exists()) {
+      batch.update(prodRef, {
+        units: newUnits,
+        openedBottleMl: newOpenedMl,
+        decants5ml: updatedItem.decants5ml,
+        decants10ml: updatedItem.decants10ml,
+        decants30ml: updatedItem.decants30ml,
+      });
+    }
+  }
+
+  // Log Kardex if bottles were opened
+  if (bottlesToOpen > 0) {
+    const kardexRef = doc(db, 'kardex_logs', generateId());
+    batch.set(kardexRef, {
+      id: kardexRef.id,
+      productId: item.productId,
+      quantity: bottlesToOpen,
+      date: new Date().toISOString().split('T')[0],
+      reason: `Apertura para decants (${totalMlNeeded}ml)`,
+      timestamp: new Date().getTime(),
+      type: 'SALIDA'
+    });
+  }
+
+  await batch.commit();
+
+  if (inMemoryInventory[inventoryId]) {
+    inMemoryInventory[inventoryId] = updatedItem;
+  }
+
+  return updatedItem;
+};
+
 export const adjustProductStock = async (
   productId: string,
   quantityChange: number,
