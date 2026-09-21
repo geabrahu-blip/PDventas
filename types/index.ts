@@ -28,6 +28,15 @@ export interface Product {
   expirationDate?: string;
   barcode?: string;
 
+  // Decants
+  hasDecants?: boolean;
+  decants5ml?: number;
+  decant5mlPrice?: number;
+  decants10ml?: number;
+  decant10mlPrice?: number;
+  decants30ml?: number;
+  decant30mlPrice?: number;
+  openedBottleMl?: number;
 }
 
 export interface InventoryItem {
@@ -50,6 +59,15 @@ export interface InventoryItem {
   wholesalePrice: number;
   sellingPrice: number;
 
+  // Decants
+  hasDecants?: boolean;
+  decants5ml?: number;
+  decant5mlPrice?: number;
+  decants10ml?: number;
+  decant10mlPrice?: number;
+  decants30ml?: number;
+  decant30mlPrice?: number;
+  openedBottleMl?: number;
 }
 
 export interface PublicCatalogItem {
