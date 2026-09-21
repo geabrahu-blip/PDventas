@@ -23,7 +23,7 @@ const generateId = () => doc(collection(db, 'dummy')).id;
 
 export const createPendingQRSale = async (
   clientName: string,
-  items: { productId: string, name: string, quantity: number, price: number, subtotal: number }[],
+  items: { productId: string, name: string, quantity: number, price: number, subtotal: number, variationType?: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened' }[],
   subtotal: number,
   total: number,
   globalDiscount: number,
@@ -61,7 +61,7 @@ export const cancelPendingQRSale = async (saleId: string): Promise<void> => {
 
 export const processPOSSale = async (
   clientName: string,
-  items: { productId: string, name: string, quantity: number, price: number, subtotal: number }[],
+  items: { productId: string, name: string, quantity: number, price: number, subtotal: number, variationType?: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened' }[],
   subtotal: number,
   total: number,
   globalDiscount: number,
@@ -88,30 +88,61 @@ export const processPOSSale = async (
         throw new Error(`Producto ${item.name} no encontrado en el inventario.`);
       }
 
-      const currentUnits = inventoryDoc.data().units || 0;
-      if (currentUnits < item.quantity) {
-        throw new Error(`Stock insuficiente para ${item.name}. Disponible: ${currentUnits}`);
+      const invData = inventoryDoc.data() as InventoryItem;
+      let available = 0;
+      let fieldToUpdate = 'units';
+
+      if (!item.variationType || item.variationType === 'sealed') {
+        available = invData.units || 0;
+      } else if (item.variationType === 'opened') {
+        // Technically opened bottles are sold entirely, ignoring quantity. But let's check correctly
+        available = (invData.openedBottleMl && invData.openedBottleMl > 0) ? 1 : 0;
+        fieldToUpdate = 'openedBottleMl';
+      } else if (item.variationType === '5ml') {
+        available = invData.decants5ml || 0;
+        fieldToUpdate = 'decants5ml';
+      } else if (item.variationType === '10ml') {
+        available = invData.decants10ml || 0;
+        fieldToUpdate = 'decants10ml';
+      } else if (item.variationType === '30ml') {
+        available = invData.decants30ml || 0;
+        fieldToUpdate = 'decants30ml';
       }
+
+      if (available < item.quantity) {
+        throw new Error(`Stock insuficiente para ${item.name}. Disponible: ${available}`);
+      }
+
+      let newValue = available - item.quantity;
+      if (item.variationType === 'opened') newValue = 0; // Remate sells all remaining ml
 
       inventoryDocs.push({
         ref: inventoryRef,
         item: item,
-        newUnits: currentUnits - item.quantity
+        fieldToUpdate,
+        newValue
       });
     }
 
     // 2. Perform all writes (Updates and Sets)
     for (const docData of inventoryDocs) {
-      // Deduct stock
-      transaction.update(docData.ref, { units: docData.newUnits });
+      // Deduct stock dynamically
+      transaction.update(docData.ref, { [docData.fieldToUpdate]: docData.newValue });
 
       // Log to Kardex
+      let logReason = 'Venta POS';
+      if (docData.item.variationType && docData.item.variationType !== 'sealed') {
+        logReason = `Venta POS (Decant ${docData.item.variationType})`;
+        if (docData.item.variationType === 'opened') logReason = 'Venta POS (Remate botella abierta)';
+      }
+
       const kardexRef = doc(db, 'kardex_logs', generateId());
       transaction.set(kardexRef, {
+        id: kardexRef.id,
         productId: docData.item.productId,
-        quantity: -docData.item.quantity,
+        quantity: docData.item.variationType === 'sealed' || !docData.item.variationType ? -docData.item.quantity : 0, // Only standard units count in numeric kardex
         date: now.toISOString().split('T')[0],
-        reason: 'Venta POS',
+        reason: logReason,
         timestamp: now.getTime(),
         type: 'SALIDA'
       });

@@ -98,6 +98,7 @@ export interface SaleItem {
   quantity: number;
   price: number;
   subtotal: number;
+  variationType?: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened';
 }
 
 export interface Sale {

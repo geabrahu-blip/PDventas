@@ -49,6 +49,29 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const { inventory } = useInventory();
   const [showProductSearch, setShowProductSearch] = useState(false);
 
+  // Auto-calculate decant prices
+  useEffect(() => {
+    if (categoryType !== 'Perfumes' || !hasDecants || sellingPrice === '') return;
+
+    const basePrice = Number(sellingPrice);
+    if (isNaN(basePrice)) return;
+
+    let p5 = 40;
+    if (basePrice > 450) {
+      // For every 100 above 450, add 5
+      const difference = basePrice - 450;
+      const steps = Math.ceil(difference / 100);
+      p5 += steps * 5;
+    }
+    const p10 = p5 * 2 - 5;
+    const p30 = p10 * 3 - 5;
+
+    // Only set if they are empty so we don't overwrite manual edits
+    if (decant5mlPrice === '') setDecant5mlPrice(p5);
+    if (decant10mlPrice === '') setDecant10mlPrice(p10);
+    if (decant30mlPrice === '') setDecant30mlPrice(p30);
+  }, [categoryType, hasDecants, sellingPrice, decant5mlPrice, decant10mlPrice, decant30mlPrice]);
+
   const { existingBrands, globalProducts } = useMemo(() => {
     const items = inventory || [];
     const uniqueProducts: InventoryItem[] = [];

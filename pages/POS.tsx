@@ -89,7 +89,8 @@ const POS = () => {
     setIsProcessing(true);
     try {
       const saleItems = cart.map(item => ({
-        productId: item.product.id,
+        productId: (item.product as any).originalProductId || item.product.id,
+        variationType: (item.product as any).variationType,
         name: item.product.name,
         quantity: item.quantity,
         price: item.product.sellingPrice,
@@ -227,7 +228,7 @@ const POS = () => {
       if (variationType === '30ml') unitsAvailable = product.decants30ml || 0;
     }
 
-    const variantProduct = { ...product, id: variantId, name: variantName, sellingPrice: variationPrice, units: unitsAvailable };
+    const variantProduct = { ...product, id: variantId, originalProductId: product.id, variationType, name: variantName, sellingPrice: variationPrice, units: unitsAvailable };
 
     setCart(prevCart => {
       const existing = prevCart.find(item => item.product.id === variantProduct.id);
@@ -287,7 +288,8 @@ const POS = () => {
     setIsProcessing(true);
     try {
       const saleItems = cart.map(item => ({
-        productId: item.product.id,
+        productId: (item.product as any).originalProductId || item.product.id,
+        variationType: (item.product as any).variationType,
         name: item.product.name,
         quantity: item.quantity,
         price: item.product.sellingPrice,
