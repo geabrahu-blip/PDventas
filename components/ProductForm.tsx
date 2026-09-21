@@ -556,6 +556,128 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         )}
       </div>
 
+      {categoryType === 'Perfumes' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-teal-100">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-teal-900">Venta de Decants</h3>
+            <label className="flex items-center cursor-pointer">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={hasDecants}
+                  onChange={(e) => setHasDecants(e.target.checked)}
+                />
+                <div className={`block w-10 h-6 rounded-full transition-colors ${hasDecants ? 'bg-teal-500' : 'bg-gray-300'}`}></div>
+                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${hasDecants ? 'transform translate-x-4' : ''}`}></div>
+              </div>
+              <span className="ml-3 text-sm font-medium text-gray-700">Habilitar</span>
+            </label>
+          </div>
+
+          {hasDecants && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {/* 5ml */}
+              <div className="p-4 border border-teal-50 bg-teal-50/30 rounded-lg">
+                <h4 className="font-medium text-teal-800 mb-3 text-center">Decants 5ml</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Stock (Unidades)</label>
+                    <input
+                      type="number"
+                      value={decants5ml}
+                      onChange={(e) => setDecants5ml(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Precio (Bs)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={decant5mlPrice}
+                      onChange={(e) => setDecant5mlPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-teal-200 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 10ml */}
+              <div className="p-4 border border-teal-50 bg-teal-50/30 rounded-lg">
+                <h4 className="font-medium text-teal-800 mb-3 text-center">Decants 10ml</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Stock (Unidades)</label>
+                    <input
+                      type="number"
+                      value={decants10ml}
+                      onChange={(e) => setDecants10ml(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Precio (Bs)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={decant10mlPrice}
+                      onChange={(e) => setDecant10mlPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-teal-200 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 30ml */}
+              <div className="p-4 border border-teal-50 bg-teal-50/30 rounded-lg">
+                <h4 className="font-medium text-teal-800 mb-3 text-center">Decants 30ml</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Stock (Unidades)</label>
+                    <input
+                      type="number"
+                      value={decants30ml}
+                      onChange={(e) => setDecants30ml(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Precio (Bs)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={decant30mlPrice}
+                      onChange={(e) => setDecant30mlPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-teal-200 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Opened Bottle Ml Info */}
+              <div className="col-span-1 sm:col-span-2 md:col-span-3">
+                <div className="flex items-center gap-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-yellow-800 mb-1">Mililitros restantes (Botella Abierta)</label>
+                    <p className="text-xs text-yellow-700">Para control interno de cuánto líquido queda de la botella usada para decants.</p>
+                  </div>
+                  <div className="w-32">
+                    <input
+                      type="number"
+                      value={openedBottleMl}
+                      onChange={(e) => setOpenedBottleMl(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="Ej. 75"
+                      className="w-full px-3 py-2 border border-yellow-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <div className="text-sm">
           {isAdmin && (
