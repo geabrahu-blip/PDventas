@@ -88,14 +88,19 @@ const POS = () => {
     isProcessingRef.current = true;
     setIsProcessing(true);
     try {
-      const saleItems = cart.map(item => ({
-        productId: (item.product as any).originalProductId || item.product.id,
-        variationType: (item.product as any).variationType,
-        name: item.product.name,
-        quantity: item.quantity,
-        price: item.product.sellingPrice,
-        subtotal: item.product.sellingPrice * item.quantity
-      }));
+      const saleItems = cart.map(item => {
+        const saleItem: any = {
+          productId: (item.product as any).originalProductId || item.product.id,
+          name: item.product.name,
+          quantity: item.quantity,
+          price: item.product.sellingPrice,
+          subtotal: item.product.sellingPrice * item.quantity
+        };
+        if ((item.product as any).variationType) {
+          saleItem.variationType = (item.product as any).variationType;
+        }
+        return saleItem;
+      });
 
       await processPOSSale(
         clientName.trim(),
@@ -287,14 +292,19 @@ const POS = () => {
 
     setIsProcessing(true);
     try {
-      const saleItems = cart.map(item => ({
-        productId: (item.product as any).originalProductId || item.product.id,
-        variationType: (item.product as any).variationType,
-        name: item.product.name,
-        quantity: item.quantity,
-        price: item.product.sellingPrice,
-        subtotal: item.product.sellingPrice * item.quantity
-      }));
+      const saleItems = cart.map(item => {
+        const saleItem: any = {
+          productId: (item.product as any).originalProductId || item.product.id,
+          name: item.product.name,
+          quantity: item.quantity,
+          price: item.product.sellingPrice,
+          subtotal: item.product.sellingPrice * item.quantity
+        };
+        if ((item.product as any).variationType) {
+          saleItem.variationType = (item.product as any).variationType;
+        }
+        return saleItem;
+      });
 
       if (paymentMethod === 'QR_AUTO') {
         const saleId = await createPendingQRSale(
