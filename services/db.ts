@@ -372,6 +372,14 @@ export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product>
     priceBs: newProductWithId.priceBs,
     wholesalePrice: newProductWithId.wholesalePrice,
     sellingPrice: newProductWithId.sellingPrice,
+    hasDecants: newProductWithId.hasDecants,
+    decants5ml: newProductWithId.decants5ml,
+    decant5mlPrice: newProductWithId.decant5mlPrice,
+    decants10ml: newProductWithId.decants10ml,
+    decant10mlPrice: newProductWithId.decant10mlPrice,
+    decants30ml: newProductWithId.decants30ml,
+    decant30mlPrice: newProductWithId.decant30mlPrice,
+    openedBottleMl: newProductWithId.openedBottleMl,
   };
   const sanitizedInvItem = JSON.parse(JSON.stringify(invItem));
   await setDoc(doc(db, 'inventory', invId), sanitizedInvItem);
@@ -444,6 +452,14 @@ export const updateProduct = async (updatedProduct: Product, updatePricesAllStor
       categoryType: updatedProduct.categoryType,
       image: updatedProduct.image || inv.image,
       barcode: updatedProduct.barcode || inv.barcode,
+      hasDecants: updatedProduct.hasDecants ?? inv.hasDecants,
+      decants5ml: updatedProduct.decants5ml ?? inv.decants5ml,
+      decant5mlPrice: updatedProduct.decant5mlPrice ?? inv.decant5mlPrice,
+      decants10ml: updatedProduct.decants10ml ?? inv.decants10ml,
+      decant10mlPrice: updatedProduct.decant10mlPrice ?? inv.decant10mlPrice,
+      decants30ml: updatedProduct.decants30ml ?? inv.decants30ml,
+      decant30mlPrice: updatedProduct.decant30mlPrice ?? inv.decant30mlPrice,
+      openedBottleMl: updatedProduct.openedBottleMl ?? inv.openedBottleMl,
     };
 
     if (inv.storeId === 'bodega') {
@@ -909,7 +925,7 @@ export const addSale = async (sale: Omit<Sale, 'id'>): Promise<Sale> => {
   return newSale;
 };
 
-export const cancelSale = async (saleId: string, items: { productId: string, name: string, quantity: number }[]): Promise<void> => {
+export const cancelSale = async (saleId: string, items: { productId: string, name: string, quantity: number, variationType?: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened' }[]): Promise<void> => {
   const saleRef = doc(db, 'sales', saleId);
   const now = new Date();
 
@@ -921,12 +937,44 @@ export const cancelSale = async (saleId: string, items: { productId: string, nam
       const inventoryDoc = await transaction.get(inventoryRef);
 
       if (inventoryDoc.exists()) {
-        const currentUnits = inventoryDoc.data().units || 0;
+        const invData = inventoryDoc.data() as InventoryItem;
+
+        let fieldToUpdate = 'units';
+        let currentValue = invData.units || 0;
+        let newValue = currentValue + item.quantity;
+        let kardexQuantity = item.quantity;
+
+        if (item.variationType === 'opened') {
+          // A sale of an opened bottle removes all ML. We can't easily know how much was in there,
+          // but for cancellation logic, we'll assume there is now at least 1 remaining ML to restore
+          // the opened state if it was sold as 'remate'.
+          fieldToUpdate = 'openedBottleMl';
+          currentValue = invData.openedBottleMl || 0;
+          newValue = currentValue > 0 ? currentValue : 1;
+          kardexQuantity = 0; // Doesn't affect numeric unit kardex
+        } else if (item.variationType === '5ml') {
+          fieldToUpdate = 'decants5ml';
+          currentValue = invData.decants5ml || 0;
+          newValue = currentValue + item.quantity;
+          kardexQuantity = 0;
+        } else if (item.variationType === '10ml') {
+          fieldToUpdate = 'decants10ml';
+          currentValue = invData.decants10ml || 0;
+          newValue = currentValue + item.quantity;
+          kardexQuantity = 0;
+        } else if (item.variationType === '30ml') {
+          fieldToUpdate = 'decants30ml';
+          currentValue = invData.decants30ml || 0;
+          newValue = currentValue + item.quantity;
+          kardexQuantity = 0;
+        }
 
         inventoryDocs.push({
           ref: inventoryRef,
           item: item,
-          newUnits: currentUnits + item.quantity // Revert the sale by adding back the stock
+          fieldToUpdate,
+          newValue,
+          kardexQuantity
         });
       }
       // If the product doesn't exist anymore, we just skip returning the stock and Kardex log.
@@ -936,16 +984,22 @@ export const cancelSale = async (saleId: string, items: { productId: string, nam
 
     // 2. Perform all writes
     for (const docData of inventoryDocs) {
-      // Add stock back
-      transaction.update(docData.ref, { units: docData.newUnits });
+      // Add stock back dynamically based on variation
+      transaction.update(docData.ref, { [docData.fieldToUpdate]: docData.newValue });
 
       // Log ENTRADA to Kardex
+      let logReason = 'Anulación de Venta';
+      if (docData.item.variationType && docData.item.variationType !== 'sealed') {
+        logReason = `Anulación de Venta (Decant ${docData.item.variationType})`;
+        if (docData.item.variationType === 'opened') logReason = 'Anulación de Venta (Remate botella abierta)';
+      }
+
       const kardexRef = doc(db, 'kardex_logs', generateId());
       transaction.set(kardexRef, {
         productId: docData.item.productId,
-        quantity: docData.item.quantity, // Positive number
+        quantity: docData.kardexQuantity, // Positive number or 0 for decants
         date: now.toISOString().split('T')[0],
-        reason: 'Anulación de Venta',
+        reason: logReason,
         timestamp: now.getTime(),
         type: 'ENTRADA'
       });
