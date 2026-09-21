@@ -33,6 +33,16 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [barcode, setBarcode] = useState('');
   const [categoryType, setCategoryType] = useState('Skincare'); // Main category
 
+  // Decants State
+  const [hasDecants, setHasDecants] = useState(false);
+  const [decants5ml, setDecants5ml] = useState<number | ''>('');
+  const [decant5mlPrice, setDecant5mlPrice] = useState<number | ''>('');
+  const [decants10ml, setDecants10ml] = useState<number | ''>('');
+  const [decant10mlPrice, setDecant10mlPrice] = useState<number | ''>('');
+  const [decants30ml, setDecants30ml] = useState<number | ''>('');
+  const [decant30mlPrice, setDecant30mlPrice] = useState<number | ''>('');
+  const [openedBottleMl, setOpenedBottleMl] = useState<number | ''>('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Autocomplete State
@@ -74,6 +84,16 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setWholesalePrice(p.wholesalePrice || '');
     setSellingPrice(p.sellingPrice || '');
 
+    // Decants
+    setHasDecants((p as any).hasDecants || false);
+    setDecants5ml((p as any).decants5ml ?? '');
+    setDecant5mlPrice((p as any).decant5mlPrice ?? '');
+    setDecants10ml((p as any).decants10ml ?? '');
+    setDecant10mlPrice((p as any).decant10mlPrice ?? '');
+    setDecants30ml((p as any).decants30ml ?? '');
+    setDecant30mlPrice((p as any).decant30mlPrice ?? '');
+    setOpenedBottleMl((p as any).openedBottleMl ?? '');
+
     // Reset search
     setShowProductSearch(false);
 
@@ -96,6 +116,15 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setUnits(editingProduct.units);
       setWholesalePrice(editingProduct.wholesalePrice);
       setSellingPrice(editingProduct.sellingPrice);
+
+      setHasDecants((editingProduct as any).hasDecants || false);
+      setDecants5ml((editingProduct as any).decants5ml ?? '');
+      setDecant5mlPrice((editingProduct as any).decant5mlPrice ?? '');
+      setDecants10ml((editingProduct as any).decants10ml ?? '');
+      setDecant10mlPrice((editingProduct as any).decant10mlPrice ?? '');
+      setDecants30ml((editingProduct as any).decants30ml ?? '');
+      setDecant30mlPrice((editingProduct as any).decant30mlPrice ?? '');
+      setOpenedBottleMl((editingProduct as any).openedBottleMl ?? '');
     } else {
       resetForm();
     }
@@ -116,6 +145,15 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setUnits('');
     setWholesalePrice('');
     setSellingPrice('');
+
+    setHasDecants(false);
+    setDecants5ml('');
+    setDecant5mlPrice('');
+    setDecants10ml('');
+    setDecant10mlPrice('');
+    setDecants30ml('');
+    setDecant30mlPrice('');
+    setOpenedBottleMl('');
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,8 +243,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
 
       const totalPrice = Number(finalPriceBs) * Number(units);
 
-      // We await onAdd here so if there's an error we don't clear the form
-      await onAdd({
+      const productPayload: any = {
         name,
         brand,
         category,
@@ -221,7 +258,23 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         wholesalePrice: Number(finalWholesalePrice),
         sellingPrice: Number(sellingPrice),
         totalPrice,
-      });
+      };
+
+      if (categoryType === 'Perfumes' && hasDecants) {
+        productPayload.hasDecants = true;
+        if (decants5ml !== '') productPayload.decants5ml = Number(decants5ml);
+        if (decant5mlPrice !== '') productPayload.decant5mlPrice = Number(decant5mlPrice);
+        if (decants10ml !== '') productPayload.decants10ml = Number(decants10ml);
+        if (decant10mlPrice !== '') productPayload.decant10mlPrice = Number(decant10mlPrice);
+        if (decants30ml !== '') productPayload.decants30ml = Number(decants30ml);
+        if (decant30mlPrice !== '') productPayload.decant30mlPrice = Number(decant30mlPrice);
+        if (openedBottleMl !== '') productPayload.openedBottleMl = Number(openedBottleMl);
+      } else if (categoryType === 'Perfumes') {
+        productPayload.hasDecants = false;
+      }
+
+      // We await onAdd here so if there's an error we don't clear the form
+      await onAdd(productPayload as Omit<Product, 'id'>);
 
       if (!editingProduct) {
         resetForm();
