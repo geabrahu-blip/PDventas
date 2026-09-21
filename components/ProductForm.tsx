@@ -166,21 +166,12 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       return;
     }
 
-    let finalPriceBs = priceBs;
-    let finalWholesalePrice = wholesalePrice;
+    let finalPriceBs = priceBs === '' ? 0 : priceBs;
+    let finalWholesalePrice = wholesalePrice === '' ? 0 : wholesalePrice;
 
     if (categoryType === 'Perfumes') {
       finalPriceBs = 0;
       finalWholesalePrice = 0;
-    } else {
-      if (priceBs === '') {
-        showToast('El precio de compra es obligatorio', 'error');
-        return;
-      }
-      if (wholesalePrice === '') {
-        showToast('El precio por mayor es obligatorio', 'error');
-        return;
-      }
     }
 
     if (sellingPrice === '') {
@@ -524,27 +515,25 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
           {categoryType !== 'Perfumes' && (
             <>
               <div className="col-span-1">
-                <label htmlFor="prod-price-bs" className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Bs)</label>
+                <label htmlFor="prod-price-bs" className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Opcional)</label>
                 <input
                   id="prod-price-bs"
                   type="number"
                   step="0.01"
-                  required={categoryType !== 'Perfumes'}
                   value={priceBs}
-                  onChange={(e) => setPriceBs(Number(e.target.value))}
+                  onChange={(e) => setPriceBs(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
 
               <div className="col-span-1">
-                <label htmlFor="prod-price-mayor" className="block text-sm font-medium text-gray-700 mb-1">Precio x Mayor</label>
+                <label htmlFor="prod-price-mayor" className="block text-sm font-medium text-gray-700 mb-1">Precio x Mayor (Opcional)</label>
                 <input
                   id="prod-price-mayor"
                   type="number"
                   step="0.01"
-                  required={categoryType !== 'Perfumes'}
                   value={wholesalePrice}
-                  onChange={(e) => setWholesalePrice(Number(e.target.value))}
+                  onChange={(e) => setWholesalePrice(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
