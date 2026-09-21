@@ -33,8 +33,8 @@ export default function VariationModal({ product, isOpen, onClose, onAddToCart }
     onAddToCart(product, type, price);
   };
 
-  const hasDecants = product.decantsEnabled && product.decants;
-  const hasOpenedBottle = (product.openedBottle?.remainingMl || 0) > 0;
+  const hasDecants = product.hasDecants;
+  const hasOpenedBottle = (product.openedBottleMl || 0) > 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -77,22 +77,34 @@ export default function VariationModal({ product, isOpen, onClose, onAddToCart }
               </h3>
 
               {['5ml', '10ml', '30ml'].map((size) => {
-                const decantInfo = product.decants?.[size as '5ml' | '10ml' | '30ml'];
-                if (!decantInfo) return null;
-                const outOfStock = decantInfo.stock < 1;
+                let stock = 0;
+                let price = 0;
+                if (size === '5ml') {
+                  stock = product.decants5ml || 0;
+                  price = product.decant5mlPrice || 0;
+                } else if (size === '10ml') {
+                  stock = product.decants10ml || 0;
+                  price = product.decant10mlPrice || 0;
+                } else if (size === '30ml') {
+                  stock = product.decants30ml || 0;
+                  price = product.decant30mlPrice || 0;
+                }
+
+                if (price === 0) return null;
+                const outOfStock = stock < 1;
 
                 return (
                   <button
                     key={size}
-                    onClick={() => handleSelect(size as any, decantInfo.price)}
+                    onClick={() => handleSelect(size as any, price)}
                     disabled={outOfStock}
                     className={`w-full flex items-center justify-between p-3 rounded-xl border ${!outOfStock ? 'border-purple-200 bg-purple-50 hover:bg-purple-100' : 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'}`}
                   >
                     <div className="text-left pl-2">
                       <span className="block font-bold text-gray-900">Decant {size}</span>
-                      <span className="text-xs text-gray-500">Stock: {decantInfo.stock} listos</span>
+                      <span className="text-xs text-gray-500">Stock: {stock} listos</span>
                     </div>
-                    <div className="font-bold text-purple-700">Bs. {decantInfo.price}</div>
+                    <div className="font-bold text-purple-700">Bs. {price}</div>
                   </button>
                 );
               })}
@@ -106,7 +118,7 @@ export default function VariationModal({ product, isOpen, onClose, onAddToCart }
                 Remate (Frasco Abierto)
               </h3>
               <p className="text-xs text-gray-500 mb-3">
-                Contiene {product.openedBottle?.remainingMl}ml. Ingrese el precio manual de remate para vender todo el saldo restante.
+                Contiene {product.openedBottleMl}ml. Ingrese el precio manual de remate para vender todo el saldo restante.
               </p>
               <form onSubmit={handleOpenedSubmit} className="flex gap-2">
                 <div className="relative flex-1">
