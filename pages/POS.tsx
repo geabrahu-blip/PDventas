@@ -10,6 +10,7 @@ import { InventoryItem } from '../types';
 import { Search, ShoppingCart, Plus, Minus, CreditCard, Banknote, Sparkles, Trash2, Loader2, QrCode, XCircle, CheckCircle2 } from 'lucide-react';
 import { printReceipt } from '../utils/printReceipt';
 import { ProductCard } from '../components/ProductCard';
+import VariationModal from '../components/pos/VariationModal';
 
 interface CartItem {
   product: InventoryItem;
@@ -28,6 +29,9 @@ const POS = () => {
 
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'QR' | 'Mixto' | 'QR_AUTO'>('Cash');
   const [mixedAmountQR, setMixedAmountQR] = useState<number | ''>('');
+
+  const [variationModalOpen, setVariationModalOpen] = useState(false);
+  const [selectedVariationProduct, setSelectedVariationProduct] = useState<InventoryItem | null>(null);
   const [mixedAmountCash, setMixedAmountCash] = useState<number | ''>('');
   const [globalDiscount, setGlobalDiscount] = useState<number | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -176,6 +180,12 @@ const POS = () => {
 
   // Cart operations
   const addToCart = useCallback((product: InventoryItem) => {
+    if (product.categoryType === 'Perfumes' && (product.hasDecants || (product.openedBottleMl && product.openedBottleMl > 0))) {
+      setSelectedVariationProduct(product);
+      setVariationModalOpen(true);
+      return;
+    }
+
     setCart(prevCart => {
       const existing = prevCart.find(item => item.product.id === product.id);
       if (existing) {
@@ -192,6 +202,49 @@ const POS = () => {
       }
       showToast('Producto agregado al carrito', 'success');
       return [...prevCart, { product, quantity: 1 }];
+    });
+  }, [showToast]);
+
+  const handleVariationAddToCart = useCallback((product: InventoryItem, variationType: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened', variationPrice: number) => {
+    setVariationModalOpen(false);
+    setSelectedVariationProduct(null);
+
+    // Create a unique variant product so it doesn't mix with sealed units in the cart
+    const variantId = `${product.id}_${variationType}`;
+    let variantName = product.name;
+    let unitsAvailable = 0;
+
+    if (variationType === 'sealed') {
+      variantName = `${product.name} (Sellado)`;
+      unitsAvailable = product.units;
+    } else if (variationType === 'opened') {
+      variantName = `${product.name} (Remate Abierto ${product.openedBottleMl}ml)`;
+      unitsAvailable = 1; // It's a one-time remate
+    } else {
+      variantName = `${product.name} (Decant ${variationType})`;
+      if (variationType === '5ml') unitsAvailable = product.decants5ml || 0;
+      if (variationType === '10ml') unitsAvailable = product.decants10ml || 0;
+      if (variationType === '30ml') unitsAvailable = product.decants30ml || 0;
+    }
+
+    const variantProduct = { ...product, id: variantId, name: variantName, sellingPrice: variationPrice, units: unitsAvailable };
+
+    setCart(prevCart => {
+      const existing = prevCart.find(item => item.product.id === variantProduct.id);
+      if (existing) {
+        if (existing.quantity >= variantProduct.units) {
+          showToast('No hay suficiente stock disponible para esta variación', 'error');
+          return prevCart;
+        }
+        showToast('Producto sumado al carrito', 'success');
+        return prevCart.map(item =>
+          item.product.id === variantProduct.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      showToast('Producto agregado al carrito', 'success');
+      return [...prevCart, { product: variantProduct as InventoryItem, quantity: 1 }];
     });
   }, [showToast]);
 
@@ -699,6 +752,15 @@ const POS = () => {
           </div>
         </div>
       </div>
+    )}
+
+    {selectedVariationProduct && (
+      <VariationModal
+        isOpen={variationModalOpen}
+        onClose={() => setVariationModalOpen(false)}
+        product={selectedVariationProduct}
+        onAddToCart={handleVariationAddToCart}
+      />
     )}
     </>
   );
