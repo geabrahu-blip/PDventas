@@ -275,7 +275,7 @@ const POS = () => {
     setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
   }, []);
 
-  const handleProcessSale = async () => {
+  const handleProcessSale = async (shouldPrint: boolean = true) => {
     if (cart.length === 0) {
       showToast('El carrito está vacío', 'error');
       return;
@@ -343,21 +343,23 @@ const POS = () => {
 
       showToast('Venta procesada exitosamente', 'success');
 
-      // IMPRESIÓN CON IFRAME OCULTO
-      printReceipt({
-        items: cart.map(item => ({
-          name: item.product.name,
-          quantity: item.quantity,
-          price: item.product.sellingPrice
-        })),
-        subtotal,
-        discount: Number(globalDiscount) || 0,
-        total,
-        date: new Date(),
-        paymentMethod,
-        amountCash: paymentMethod === 'Mixto' ? Number(mixedAmountCash) || 0 : undefined,
-        amountQR: paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
-      });
+      if (shouldPrint) {
+        // IMPRESIÓN CON IFRAME OCULTO
+        printReceipt({
+          items: cart.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.sellingPrice
+          })),
+          subtotal,
+          discount: Number(globalDiscount) || 0,
+          total,
+          date: new Date(),
+          paymentMethod,
+          amountCash: paymentMethod === 'Mixto' ? Number(mixedAmountCash) || 0 : undefined,
+          amountQR: paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
+        });
+      }
 
       // Reset POS state
       setCart([]);
@@ -686,22 +688,39 @@ const POS = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleProcessSale}
-            disabled={cart.length === 0 || isProcessing}
-            className="w-full py-4 lg:py-3 bg-cyan-500 text-white rounded-xl font-bold text-base lg:text-sm hover:bg-cyan-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-[0_4px_14px_0_rgba(6,182,212,0.39)] hover:shadow-[0_6px_20px_rgba(6,182,212,0.23)] disabled:shadow-none active:scale-[0.98]"
-          >
-            {isProcessing ? (
-              <span className="animate-pulse flex items-center gap-2">
-                <Sparkles className="w-5 h-5 animate-spin" /> Procesando...
-              </span>
-            ) : (
-              <>
-                <ShoppingCart className="w-5 h-5" />
-                Cobrar Venta
-              </>
-            )}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleProcessSale(false)}
+              disabled={cart.length === 0 || isProcessing}
+              className="flex-1 py-4 lg:py-3 bg-slate-600 text-white rounded-xl font-bold text-[13px] lg:text-xs hover:bg-slate-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1 shadow-sm active:scale-[0.98]"
+            >
+              {isProcessing ? (
+                <span className="animate-pulse flex items-center gap-1">
+                  <Sparkles className="w-4 h-4 animate-spin" /> Proc...
+                </span>
+              ) : (
+                <>
+                  Cobrar (Sin Imprimir)
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => handleProcessSale(true)}
+              disabled={cart.length === 0 || isProcessing}
+              className="flex-1 py-4 lg:py-3 bg-cyan-500 text-white rounded-xl font-bold text-[13px] lg:text-xs hover:bg-cyan-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1 shadow-[0_4px_14px_0_rgba(6,182,212,0.39)] hover:shadow-[0_6px_20px_rgba(6,182,212,0.23)] disabled:shadow-none active:scale-[0.98]"
+            >
+              {isProcessing ? (
+                <span className="animate-pulse flex items-center gap-1">
+                  <Sparkles className="w-4 h-4 animate-spin" /> Procesando...
+                </span>
+              ) : (
+                <>
+                  <ShoppingCart className="w-4 h-4" />
+                  Cobrar e Imprimir
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
