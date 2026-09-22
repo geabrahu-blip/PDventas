@@ -356,6 +356,14 @@ const Inventory = () => {
                         {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 font-medium">{product.capacity}</span>}
                         {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded">{product.gender}</span>}
                       </div>
+                      {(product.categoryType === 'Perfumes' && product.hasDecants) && (
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                          {(product.decants5ml || 0) > 0 && <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium border border-purple-100"><Droplet className="w-3 h-3"/> 5ml: {product.decants5ml}</span>}
+                          {(product.decants10ml || 0) > 0 && <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium border border-purple-100"><Droplet className="w-3 h-3"/> 10ml: {product.decants10ml}</span>}
+                          {(product.decants30ml || 0) > 0 && <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium border border-purple-100"><Droplet className="w-3 h-3"/> 30ml: {product.decants30ml}</span>}
+                          {(product.openedBottleMl || 0) > 0 && <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium border border-amber-200"><Droplet className="w-3 h-3"/> Abierto: {product.openedBottleMl}ml</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -470,6 +478,15 @@ const Inventory = () => {
                       {product.capacity && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-600 font-medium">{product.capacity}</span>}
                       {product.gender && <span className="bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 text-[10px]">{product.gender}</span>}
                     </div>
+
+                    {(product.categoryType === 'Perfumes' && product.hasDecants) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        {(product.decants5ml || 0) > 0 && <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-purple-100"><Droplet className="w-2.5 h-2.5"/> 5ml: {product.decants5ml}</span>}
+                        {(product.decants10ml || 0) > 0 && <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-purple-100"><Droplet className="w-2.5 h-2.5"/> 10ml: {product.decants10ml}</span>}
+                        {(product.decants30ml || 0) > 0 && <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-purple-100"><Droplet className="w-2.5 h-2.5"/> 30ml: {product.decants30ml}</span>}
+                        {(product.openedBottleMl || 0) > 0 && <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200"><Droplet className="w-2.5 h-2.5"/> Abierto: {product.openedBottleMl}ml</span>}
+                      </div>
+                    )}
 
                     <div className="mt-2 flex items-center justify-between">
                       <div className="text-sm font-bold text-slate-800">

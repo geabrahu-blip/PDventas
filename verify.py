@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 
 def run_cuj(page):
     # Load the app
-    page.goto("http://localhost:4173")
+    page.goto("http://localhost:5173")
     page.wait_for_timeout(3000)
 
     # Login
@@ -14,7 +14,7 @@ def run_cuj(page):
     page.screenshot(path="/home/jules/verification/screenshots/debug_logged_in.png")
 
     # Go to Inventory page
-    page.goto("http://localhost:4173/inventory")
+    page.goto("http://localhost:5173/inventory")
     page.wait_for_timeout(4000)
 
     # Click Add Product
