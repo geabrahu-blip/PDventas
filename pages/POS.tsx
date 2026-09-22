@@ -373,6 +373,7 @@ const POS = () => {
     } catch (error) {
       console.error("Error processing sale:", error);
       showToast(error instanceof Error ? error.message : 'Error al procesar la venta', 'error');
+    } finally {
       setIsProcessing(false);
     }
   };
