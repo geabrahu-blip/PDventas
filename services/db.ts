@@ -887,6 +887,7 @@ export interface DailySalesSummary {
   capacity?: string;
   image?: string;
   quantitySold: number;
+  currentStock?: number | string;
   variationType?: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened';
 }
 
