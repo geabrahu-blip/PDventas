@@ -93,11 +93,18 @@ export default function Alerts() {
       const enrichedSuggestions = suggestions.map(item => {
         const invItem = inventory.find(p => p.id === item.productId || p.productId === item.productId);
         if (invItem) {
+          let currentStock: number | string = invItem.units;
+          if (item.variationType === '5ml') currentStock = invItem.decants5ml || 0;
+          if (item.variationType === '10ml') currentStock = invItem.decants10ml || 0;
+          if (item.variationType === '30ml') currentStock = invItem.decants30ml || 0;
+          if (item.variationType === 'opened') currentStock = `${invItem.openedBottleMl || 0}ml`;
+
           return {
             ...item,
             brand: invItem.brand,
             capacity: invItem.capacity,
-            image: invItem.image
+            image: invItem.image,
+            currentStock
           };
         }
         return item;
@@ -460,10 +467,18 @@ export default function Alerts() {
                     </div>
                   </div>
 
-                  <div className="shrink-0 text-center">
-                    <div className="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wide">Sugerido</div>
-                    <div className="inline-flex items-center justify-center min-w-[3rem] px-2 py-1 bg-indigo-100 text-indigo-800 font-bold rounded-lg border border-indigo-200">
-                      +{item.quantitySold}
+                  <div className="flex gap-4 shrink-0">
+                    <div className="text-center">
+                      <div className="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wide">Stock Actual</div>
+                      <div className="inline-flex items-center justify-center min-w-[3rem] px-2 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg border border-slate-200">
+                        {item.currentStock !== undefined ? item.currentStock : '-'}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-indigo-500 font-bold mb-1 uppercase tracking-wide">Sugerido</div>
+                      <div className="inline-flex items-center justify-center min-w-[3rem] px-2 py-1 bg-indigo-100 text-indigo-800 font-bold rounded-lg border border-indigo-200">
+                        +{item.quantitySold}
+                      </div>
                     </div>
                   </div>
                 </div>
