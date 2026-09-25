@@ -880,6 +880,43 @@ export const processBulkTransfer = async (
 };
 
 // Sales
+export interface DailySalesSummary {
+  productId: string;
+  name: string;
+  brand?: string;
+  capacity?: string;
+  image?: string;
+  quantitySold: number;
+  variationType?: 'sealed' | '5ml' | '10ml' | '30ml' | 'opened';
+}
+
+export const getSalesSummaryByDate = async (dateStr: string): Promise<DailySalesSummary[]> => {
+  const sales = await getSales(dateStr, dateStr); // Use dateStr for both start and end to strictly query a single day
+  const summaryMap = new Map<string, DailySalesSummary>();
+
+  for (const sale of sales) {
+    if ((sale as any).status === 'PENDING_QR') continue; // Don't count incomplete sales
+
+    for (const item of sale.items) {
+      const key = `${item.productId}-${item.variationType || 'sealed'}`;
+
+      if (summaryMap.has(key)) {
+        summaryMap.get(key)!.quantitySold += item.quantity;
+      } else {
+        summaryMap.set(key, {
+          productId: item.productId,
+          name: item.name,
+          quantitySold: item.quantity,
+          variationType: item.variationType
+        });
+      }
+    }
+  }
+
+  const summaryList = Array.from(summaryMap.values());
+  return summaryList.sort((a, b) => b.quantitySold - a.quantitySold);
+};
+
 export const getSales = async (startDateStr?: string, endDateStr?: string): Promise<Sale[]> => {
   let q;
 

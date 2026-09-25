@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { AlertTriangle, PackageX, PackageMinus, Package, Loader2, Plus, ListTodo, Search, MessageSquare, CheckCircle2, Clock, XCircle, FileText } from "lucide-react";
-import { getPaginatedInventoryItems, getRestockItems, addRestockItem, updateRestockItem, deleteRestockItem } from "../services/db";
+import { AlertTriangle, PackageX, PackageMinus, Package, Loader2, Plus, ListTodo, Search, MessageSquare, CheckCircle2, Clock, XCircle, FileText, Calendar, TrendingUp } from "lucide-react";
+import { getPaginatedInventoryItems, getRestockItems, addRestockItem, updateRestockItem, deleteRestockItem, getSalesSummaryByDate, DailySalesSummary } from "../services/db";
 import { InventoryItem, RestockItem, RestockStatus } from "../types";
+import { getYesterdayDateString, getLocalDateString } from "../utils/dateUtils";
 import { useAuth } from "../context/AuthContext";
 import { useInventory } from "../context/InventoryContext";
 import { useToast } from "../context/ToastContext";
@@ -23,6 +24,11 @@ export default function Alerts() {
   // Lista de reposición
   const [restockList, setRestockList] = useState<RestockItem[]>([]);
   const [loadingRestock, setLoadingRestock] = useState(true);
+
+  // Sugerencias de reposición (Ventas del día anterior)
+  const [salesSuggestions, setSalesSuggestions] = useState<DailySalesSummary[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionsDate, setSuggestionsDate] = useState<string>(getYesterdayDateString());
 
   // Formulario nueva reposición
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,10 +84,42 @@ export default function Alerts() {
     }
   }, [showToast]);
 
+  const fetchSuggestions = useCallback(async (dateStr: string) => {
+    try {
+      setLoadingSuggestions(true);
+      const suggestions = await getSalesSummaryByDate(dateStr);
+
+      // Enrich with inventory details from context to avoid extra db reads
+      const enrichedSuggestions = suggestions.map(item => {
+        const invItem = inventory.find(p => p.id === item.productId || p.productId === item.productId);
+        if (invItem) {
+          return {
+            ...item,
+            brand: invItem.brand,
+            capacity: invItem.capacity,
+            image: invItem.image
+          };
+        }
+        return item;
+      });
+
+      setSalesSuggestions(enrichedSuggestions);
+    } catch (error) {
+      console.error("Error fetching sales suggestions:", error);
+      showToast("Error al cargar sugerencias de reposición", "error");
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [showToast, inventory]);
+
   useEffect(() => {
     fetchAlerts(true);
     fetchRestock();
   }, [fetchAlerts, fetchRestock]);
+
+  useEffect(() => {
+    fetchSuggestions(suggestionsDate);
+  }, [fetchSuggestions, suggestionsDate]);
 
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore) {
@@ -344,12 +382,105 @@ export default function Alerts() {
 
       <hr className="border-slate-200" />
 
-      {/* SECCIÓN LISTA DE REPOSICIÓN */}
+      {/* SECCIÓN SUGERENCIAS (VENDIDOS AYER) */}
+      <section className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-indigo-500" />
+              Sugerencias de Reposición
+            </h2>
+            <p className="text-slate-600 text-sm mt-1">
+              Sugerencias basadas en las ventas de la fecha seleccionada.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-slate-500" />
+            <input
+              type="date"
+              value={suggestionsDate}
+              max={getLocalDateString()}
+              onChange={(e) => setSuggestionsDate(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-indigo-50/50">
+            <h3 className="font-semibold text-indigo-900 flex items-center gap-2">
+              Vendidos el {new Date(suggestionsDate + 'T00:00:00').toLocaleDateString()}
+              <span className="bg-indigo-200 text-indigo-800 text-xs font-bold px-2 py-1 rounded-full">
+                {salesSuggestions.length}
+              </span>
+            </h3>
+          </div>
+
+          <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto">
+            {loadingSuggestions ? (
+              <div className="p-8 flex justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+              </div>
+            ) : salesSuggestions.length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="w-8 h-8 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium">No hay ventas registradas este día.</p>
+                <p className="text-slate-500 text-sm mt-1">No hay sugerencias de reposición.</p>
+              </div>
+            ) : (
+              salesSuggestions.map((item) => (
+                <div key={`${item.productId}-${item.variationType}`} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
+                  <div className="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-slate-200">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 break-words">
+                      {item.name}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1">
+                      {item.brand && <span>{item.brand}</span>}
+                      {item.brand && item.capacity && <span>•</span>}
+                      {item.capacity && <span>{item.capacity}</span>}
+                      {item.variationType && item.variationType !== 'sealed' && (
+                         <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium ml-1 border border-slate-200">
+                           {item.variationType === 'opened' ? 'Abierto' : item.variationType}
+                         </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-center">
+                    <div className="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wide">Sugerido</div>
+                    <div className="inline-flex items-center justify-center min-w-[3rem] px-2 py-1 bg-indigo-100 text-indigo-800 font-bold rounded-lg border border-indigo-200">
+                      +{item.quantitySold}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <hr className="border-slate-200" />
+
+      {/* SECCIÓN LISTA DE REPOSICIÓN MANUAL */}
       <section className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <ListTodo className="w-6 h-6 text-blue-500" />
-            Lista de Reposición
+            Lista de Reposición Manual
           </h2>
           <p className="text-slate-600 text-sm mt-1">
             Anota los productos que se necesitan reponer o sugerencias de clientes.
