@@ -308,7 +308,7 @@ const SalesReport = () => {
                 <th className="px-6 py-4">Productos</th>
                 <th className="px-6 py-4">Pago</th>
                 <th className="px-6 py-4 text-right">Total</th>
-                <th className="px-6 py-4 text-center">Acciones</th>
+                {isAdmin && <th className="px-6 py-4 text-center">Acciones</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -352,20 +352,22 @@ const SalesReport = () => {
                   <td className="px-6 py-4 text-right font-bold text-teal-600">
                     Bs. {(sale.total || 0).toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => handleDeleteClick(sale)}
-                      className="p-1 text-gray-400 hover:text-red-600 rounded-full transition-colors"
-                      title="Anular venta y devolver stock"
-                    >
-                      <Trash2 className="w-5 h-5 mx-auto" />
-                    </button>
-                  </td>
+                  {isAdmin && (
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => handleDeleteClick(sale)}
+                        className="p-1 text-gray-400 hover:text-red-600 rounded-full transition-colors"
+                        title="Anular venta y devolver stock"
+                      >
+                        <Trash2 className="w-5 h-5 mx-auto" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {sales.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={isAdmin ? 8 : 7} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron ventas para los filtros seleccionados.
                   </td>
                 </tr>
