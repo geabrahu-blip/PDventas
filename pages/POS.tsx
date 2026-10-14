@@ -117,12 +117,39 @@ const POS = () => {
         isManual
       );
 
-      // Descontar inventario localmente para UI instanánea
-      const updatedProducts = cart.map(item => ({
-        ...item.product,
-        units: Math.max(0, item.product.units - item.quantity)
-      }));
-      updateMultipleLocalInventoryItems(updatedProducts);
+      // Descontar inventario localmente para UI instantánea
+      const modificationsMap: Record<string, InventoryItem> = {};
+
+      cart.forEach(item => {
+        const productData = item.product as any;
+        const vt = productData.variationType;
+
+        if (vt && vt !== 'sealed') {
+          // It's a variation (decant or opened). We must update the ORIGINAL product.
+          const origId = productData.originalProductId;
+          // Use the accumulated modifications if it exists, otherwise find original
+          const baseProd = modificationsMap[origId] || products.find(p => p.id === origId);
+          if (baseProd) {
+            modificationsMap[origId] = {
+              ...baseProd,
+              openedBottleMl: vt === 'opened' ? 0 : baseProd.openedBottleMl,
+              decants5ml: vt === '5ml' ? Math.max(0, (baseProd.decants5ml || 0) - item.quantity) : baseProd.decants5ml,
+              decants10ml: vt === '10ml' ? Math.max(0, (baseProd.decants10ml || 0) - item.quantity) : baseProd.decants10ml,
+              decants30ml: vt === '30ml' ? Math.max(0, (baseProd.decants30ml || 0) - item.quantity) : baseProd.decants30ml,
+            };
+          }
+        } else {
+          // Normal sealed product
+          const id = item.product.id;
+          const baseProd = modificationsMap[id] || item.product;
+          modificationsMap[id] = {
+            ...baseProd,
+            units: Math.max(0, baseProd.units - item.quantity)
+          };
+        }
+      });
+
+      updateMultipleLocalInventoryItems(Object.values(modificationsMap));
 
       showToast(isManual ? 'Pago confirmado manualmente' : 'Pago confirmado por webhook', 'success');
 
@@ -334,12 +361,39 @@ const POS = () => {
         paymentMethod === 'Mixto' ? Number(mixedAmountQR) || 0 : undefined
       );
 
-      // Descontar inventario localmente para UI instanánea
-      const updatedProducts = cart.map(item => ({
-        ...item.product,
-        units: Math.max(0, item.product.units - item.quantity)
-      }));
-      updateMultipleLocalInventoryItems(updatedProducts);
+      // Descontar inventario localmente para UI instantánea
+      const modificationsMap: Record<string, InventoryItem> = {};
+
+      cart.forEach(item => {
+        const productData = item.product as any;
+        const vt = productData.variationType;
+
+        if (vt && vt !== 'sealed') {
+          // It's a variation (decant or opened). We must update the ORIGINAL product.
+          const origId = productData.originalProductId;
+          // Use the accumulated modifications if it exists, otherwise find original
+          const baseProd = modificationsMap[origId] || products.find(p => p.id === origId);
+          if (baseProd) {
+            modificationsMap[origId] = {
+              ...baseProd,
+              openedBottleMl: vt === 'opened' ? 0 : baseProd.openedBottleMl,
+              decants5ml: vt === '5ml' ? Math.max(0, (baseProd.decants5ml || 0) - item.quantity) : baseProd.decants5ml,
+              decants10ml: vt === '10ml' ? Math.max(0, (baseProd.decants10ml || 0) - item.quantity) : baseProd.decants10ml,
+              decants30ml: vt === '30ml' ? Math.max(0, (baseProd.decants30ml || 0) - item.quantity) : baseProd.decants30ml,
+            };
+          }
+        } else {
+          // Normal sealed product
+          const id = item.product.id;
+          const baseProd = modificationsMap[id] || item.product;
+          modificationsMap[id] = {
+            ...baseProd,
+            units: Math.max(0, baseProd.units - item.quantity)
+          };
+        }
+      });
+
+      updateMultipleLocalInventoryItems(Object.values(modificationsMap));
 
       showToast('Venta procesada exitosamente', 'success');
 
