@@ -4,6 +4,7 @@ import { getPublicInventoryItems, getAllPublicInventoryItems, getCatalogConfig, 
 import { normalizeText } from '../utils/textUtils';
 import ProductCarousel from '../components/ProductCarousel';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { useToast } from '../context/ToastContext';
 
 const WHATSAPP_NUMBER = "59169236994";
 const TABS = ['Todos', 'Varón', 'Mujer', 'Unisex', 'Todo tipo de piel', 'Piel Grasa', 'Piel Seca', 'Piel Mixta', 'Piel Sensible', 'Piel con manchas'];
@@ -36,9 +37,14 @@ const Catalog = () => {
   const [featuredBrands, setFeaturedBrands] = useState<string[]>([]);
   const isPureState = !searchQuery && activeTab === 'Todos' && !isViewingAllCatalog;
 
+  // Search Dropdown
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const { showToast } = useToast();
 
   // Location Modal state
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -158,9 +164,27 @@ const Catalog = () => {
     setSearchQuery(val);
     if (val.trim() !== '') {
       setIsSearching(true);
-      setIsViewingAllCatalog(true); // Disable pure state when searching
+      setShowSearchDropdown(true);
     } else {
       setIsSearching(false);
+      setShowSearchDropdown(false);
+    }
+  };
+
+  const handleSearchSelect = (product: any) => {
+    setSearchQuery(product.name);
+    setShowSearchDropdown(false);
+    setIsSearching(true);
+    setIsViewingAllCatalog(true);
+  };
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setShowSearchDropdown(false);
+      if (searchQuery.trim() !== '') {
+        setIsSearching(true);
+        setIsViewingAllCatalog(true);
+      }
     }
   };
 
@@ -203,7 +227,7 @@ const Catalog = () => {
       }
       return [...prev, { product, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    showToast(`${product.name} agregado al carrito`, 'success');
   };
 
   const removeFromCart = (productId: string) => {
@@ -252,16 +276,16 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans relative">
       {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900 via-[#1a0b2e] to-gray-900 shadow-2xl sticky top-0 z-30 border-b border-[#D4AF37]/20">
+      <header className="bg-primary-600 shadow-xl sticky top-0 z-30 border-b border-primary-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <img src="/logo.png" alt="Logo" className="h-12 w-12 rounded-full object-cover border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <img src="/logo.png" alt="Logo" className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.4)]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400 tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
                   Piel Divina
                 </h1>
-                <p className="text-xs md:text-sm text-[#D4AF37] font-medium tracking-widest uppercase mt-0.5">
+                <p className="text-xs md:text-sm text-primary-100 font-medium tracking-widest uppercase mt-0.5">
                   Catálogo Exclusivo
                 </p>
               </div>
@@ -277,23 +301,63 @@ const Catalog = () => {
                   placeholder="Buscar cosméticos..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  onFocus={loadAllProducts}
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-700 rounded-full bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent sm:text-sm transition-all"
+                  onFocus={() => {
+                    loadAllProducts();
+                    if (searchQuery.trim() !== '') setShowSearchDropdown(true);
+                  }}
+                  onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+                  onKeyDown={handleSearchSubmit}
+                  className="block w-full pl-10 pr-10 py-2 border border-white/20 rounded-full bg-white/10 text-white placeholder-primary-100 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white focus:text-gray-900 sm:text-sm transition-all shadow-inner backdrop-blur-sm"
                 />
                 {isGlobalLoading && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#D4AF37]"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  </div>
+                )}
+
+                {/* Search Dropdown */}
+                {showSearchDropdown && dedupedProducts.length > 0 && searchQuery.trim() !== '' && (
+                  <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                    <ul className="max-h-64 overflow-y-auto">
+                      {dedupedProducts.slice(0, 3).map((product) => (
+                        <li
+                          key={product.id}
+                          className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Prevent input blur
+                            handleSearchSelect(product);
+                          }}
+                        >
+                          <div className="h-10 w-10 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                            {product.image ? (
+                              <img src={product.image} alt={product.name} className="h-full w-full object-contain" />
+                            ) : (
+                              <Package className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex flex-col flex-1 overflow-hidden">
+                            <span className="text-xs font-bold text-gray-900 truncate">{product.name}</span>
+                            {product.brand && (
+                              <span className="text-[10px] text-gray-500 uppercase font-semibold">{product.brand}</span>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-gray-900 flex-shrink-0">
+                            Bs. {product.sellingPrice?.toFixed(2) || '0.00'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
 
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative bg-gradient-to-br from-[#D4AF37] to-[#AA8222] p-2.5 rounded-full shadow-[0_0_15px_rgba(212,175,55,0.4)] hover:scale-105 transition-transform"
+                className="relative bg-white p-2.5 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.4)] hover:scale-105 transition-transform"
               >
-                <ShoppingBag className="h-5 w-5 text-gray-900" />
+                <ShoppingBag className="h-5 w-5 text-primary-600" />
                 {cart.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white">
                     {cart.reduce((acc, item) => acc + item.quantity, 0)}
                   </span>
                 )}
@@ -313,8 +377,8 @@ const Catalog = () => {
                   }}
                   className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
                     activeTab === tab
-                      ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA8222] text-gray-900 shadow-[0_4px_10px_rgba(212,175,55,0.3)] transform scale-105'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white backdrop-blur-sm border border-white/5'
+                      ? 'bg-white text-primary-600 shadow-[0_4px_10px_rgba(255,255,255,0.3)] transform scale-105'
+                      : 'bg-primary-500 text-primary-50 hover:bg-primary-400 hover:text-white backdrop-blur-sm border border-primary-400/50'
                   }`}
                 >
                   {tab}
@@ -333,7 +397,7 @@ const Catalog = () => {
             <div className="mb-6">
               <button
                 onClick={handleReturnToHome}
-                className="flex items-center gap-2 text-gray-600 hover:text-[#D4AF37] font-semibold transition-colors"
+                className="flex items-center gap-2 text-gray-600 hover:text-primary-600 font-semibold transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Volver al inicio
@@ -400,7 +464,7 @@ const Catalog = () => {
                         <Package className="w-20 h-20 text-gray-200" />
                       )}
                       {product.gender && (
-                        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-[#1a0b2e] shadow-sm border border-gray-100">
+                        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-primary-900 shadow-sm border border-gray-100">
                           {product.gender}
                         </span>
                       )}
@@ -410,7 +474,7 @@ const Catalog = () => {
                     <div className="p-5 flex-1 flex flex-col">
                       <div className="mb-2">
                         {product.brand && (
-                          <p className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest mb-1">
+                          <p className="text-[10px] font-bold text-primary-600 uppercase tracking-widest mb-1">
                             {product.brand}
                           </p>
                         )}
@@ -443,7 +507,7 @@ const Catalog = () => {
 
                         <button
                           onClick={() => addToCart(product)}
-                          className="bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-bold hover:bg-[#D4AF37] transition-colors shadow-sm"
+                          className="bg-primary-600 text-white px-3 py-2 rounded-xl text-xs font-bold hover:bg-primary-700 transition-colors shadow-sm"
                         >
                           Añadir
                         </button>
@@ -459,7 +523,7 @@ const Catalog = () => {
                 <button
                   onClick={handleLoadMore}
                   disabled={isLoadingMore}
-                  className="bg-white border-2 border-gray-200 text-gray-700 hover:border-[#D4AF37] hover:text-[#D4AF37] font-bold py-2.5 px-6 rounded-full shadow-sm transition-all disabled:opacity-50 flex items-center gap-2"
+                  className="bg-white border-2 border-gray-200 text-gray-700 hover:border-primary-600 hover:text-primary-600 font-bold py-2.5 px-6 rounded-full shadow-sm transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   {isLoadingMore ? 'Cargando...' : 'Cargar más'}
                 </button>
@@ -624,7 +688,7 @@ const Catalog = () => {
                 href={MAPS_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-gray-900 hover:bg-[#D4AF37] text-white flex items-center justify-center gap-2 py-4 px-4 rounded-xl font-bold transition-colors text-lg mt-2 shadow-md"
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center gap-2 py-4 px-4 rounded-xl font-bold transition-colors text-lg mt-2 shadow-md"
               >
                 <MapPin className="h-5 w-5" />
                 Abrir en Google Maps
