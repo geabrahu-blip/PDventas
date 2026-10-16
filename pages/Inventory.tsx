@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { CatalogSettingsModal } from '../components/CatalogSettingsModal';
+import { Settings } from 'lucide-react';
 
 const Inventory = () => {
   const { isAdmin } = useAuth();
@@ -28,6 +30,7 @@ const Inventory = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isCatalogSettingsOpen, setIsCatalogSettingsOpen] = useState(false);
 
   // Adjust Stock State
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -226,6 +229,14 @@ const Inventory = () => {
           {isAdmin && (
             <>
               <button
+                onClick={() => setIsCatalogSettingsOpen(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center justify-center gap-2 w-full sm:w-auto transition-colors"
+                title="Configuración de Marcas"
+              >
+                <Settings className="w-5 h-5" />
+                Configurar Catálogo
+              </button>
+              <button
                 onClick={() => setIsSyncModalOpen(true)}
                 disabled={isSyncing}
                 className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto"
@@ -247,6 +258,10 @@ const Inventory = () => {
           )}
         </div>
       </div>
+
+      {isCatalogSettingsOpen && (
+        <CatalogSettingsModal onClose={() => setIsCatalogSettingsOpen(false)} />
+      )}
 
       {/* Añadir Producto Modal (Fullscreen on mobile, inline/modal on desktop depending on preference, here we make it modal-like for consistency) */}
       {isAddProductOpen && isAdmin && (
