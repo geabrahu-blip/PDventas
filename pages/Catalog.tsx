@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Package, ShoppingBag, Filter, Search, MapPin, X, Plus, Minus } from 'lucide-react';
+import { Package, ShoppingBag, Filter, Search, MapPin, X, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { getPublicInventoryItems, getAllPublicInventoryItems, PaginatedResult } from '../services/db';
+import { normalizeText } from '../utils/textUtils';
+import ProductCarousel from '../components/ProductCarousel';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 const WHATSAPP_NUMBER = "59169236994";
@@ -28,6 +30,10 @@ const Catalog = () => {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState('Todos');
+
+  // Pure State / Grid View
+  const [isViewingAllCatalog, setIsViewingAllCatalog] = useState(false);
+  const isPureState = !searchQuery && activeTab === 'Todos' && !isViewingAllCatalog;
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -93,7 +99,11 @@ const Catalog = () => {
     if (isSearching && allProducts.length === 0) {
       loadAllProducts();
     }
-  }, [isSearching, allProducts.length]);
+    if (isPureState && allProducts.length === 0) {
+      // Need all products for the carousels to be populated correctly if they are rendered
+      loadAllProducts();
+    }
+  }, [isSearching, isPureState, allProducts.length]);
 
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore && !isSearching) {
@@ -105,8 +115,14 @@ const Catalog = () => {
   const dedupedProducts = useMemo(() => {
     // If we haven't finished loading all products yet, fallback to what we have so far
     const source = isSearching && allProducts.length > 0 ? allProducts : rawProducts;
+
     const filtered = isSearching && searchQuery.trim() !== ''
-      ? source.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.brand?.toLowerCase().includes(searchQuery.toLowerCase()))
+      ? source.filter(p => {
+          const searchNorm = normalizeText(searchQuery);
+          return normalizeText(p.name).includes(searchNorm) ||
+                 normalizeText(p.brand).includes(searchNorm) ||
+                 normalizeText(p.categoryType).includes(searchNorm);
+        })
       : source;
 
     const seen = new Set();
@@ -127,9 +143,50 @@ const Catalog = () => {
     setSearchQuery(val);
     if (val.trim() !== '') {
       setIsSearching(true);
+      setIsViewingAllCatalog(true); // Disable pure state when searching
     } else {
       setIsSearching(false);
     }
+  };
+
+  // Filter for carousels
+  const carouselData = useMemo(() => {
+    if (!isPureState || allProducts.length === 0) return { newArrivals: [], popular: [], brands: [] };
+
+    // Novedades: Sort by ID or creation logic (since no date, reverse array or sort by ID descending)
+    const newArrivals = [...allProducts].reverse().slice(0, 10);
+
+    // Más Populares: Random slice or just slice from middle
+    const popular = [...allProducts].sort(() => 0.5 - Math.random()).slice(0, 10);
+
+    // Group by top brand
+    const brandCounts = allProducts.reduce((acc: any, p) => {
+      if (p.brand) {
+        acc[p.brand] = (acc[p.brand] || 0) + 1;
+      }
+      return acc;
+    }, {});
+
+    const sortedBrands = Object.entries(brandCounts).sort((a: any, b: any) => b[1] - a[1]);
+    const topBrand = sortedBrands.length > 0 ? sortedBrands[0][0] : null;
+    const topBrandProducts = topBrand ? allProducts.filter(p => p.brand === topBrand).slice(0, 10) : [];
+
+    const secondTopBrand = sortedBrands.length > 1 ? sortedBrands[1][0] : null;
+    const secondTopBrandProducts = secondTopBrand ? allProducts.filter(p => p.brand === secondTopBrand).slice(0, 10) : [];
+
+    return {
+      newArrivals,
+      popular,
+      topBrand: topBrand ? { name: topBrand, products: topBrandProducts } : null,
+      secondTopBrand: secondTopBrand ? { name: secondTopBrand, products: secondTopBrandProducts } : null
+    };
+  }, [isPureState, allProducts]);
+
+  const handleReturnToHome = () => {
+    setSearchQuery('');
+    setIsSearching(false);
+    setActiveTab('Todos');
+    setIsViewingAllCatalog(false);
   };
 
   // Cart Functions
@@ -245,7 +302,10 @@ const Catalog = () => {
               {TABS.map(tab => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    setIsViewingAllCatalog(true);
+                  }}
                   className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
                     activeTab === tab
                       ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA8222] text-gray-900 shadow-[0_4px_10px_rgba(212,175,55,0.3)] transform scale-105'
@@ -263,6 +323,18 @@ const Catalog = () => {
       {/* Main Content */}
       <div className="flex-1 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-5">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          {!isPureState && (
+            <div className="mb-6">
+              <button
+                onClick={handleReturnToHome}
+                className="flex items-center gap-2 text-gray-600 hover:text-[#D4AF37] font-semibold transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Volver al inicio
+              </button>
+            </div>
+          )}
 
           {/* Dónde Encontrarnos */}
           <div className="mb-10 bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden flex flex-col md:flex-row">
@@ -293,16 +365,57 @@ const Catalog = () => {
             </div>
           )}
 
-          {dedupedProducts.length > 0 ? (
+          {isPureState ? (
+            <div className="space-y-4">
+              <ProductCarousel
+                title="✨ Novedades"
+                products={carouselData.newArrivals}
+                onAddToCart={addToCart}
+                onViewAll={() => setIsViewingAllCatalog(true)}
+              />
+              <ProductCarousel
+                title="🔥 Más Populares"
+                products={carouselData.popular}
+                onAddToCart={addToCart}
+                onViewAll={() => setIsViewingAllCatalog(true)}
+              />
+              {carouselData.topBrand && (
+                <ProductCarousel
+                  title={`✨ Novedades en ${carouselData.topBrand.name}`}
+                  products={carouselData.topBrand.products}
+                  onAddToCart={addToCart}
+                  onViewAll={() => {
+                    setSearchQuery(carouselData.topBrand!.name);
+                    setIsSearching(true);
+                    setIsViewingAllCatalog(true);
+                  }}
+                />
+              )}
+              {carouselData.secondTopBrand && (
+                <ProductCarousel
+                  title={`✨ Novedades en ${carouselData.secondTopBrand.name}`}
+                  products={carouselData.secondTopBrand.products}
+                  onAddToCart={addToCart}
+                  onViewAll={() => {
+                    setSearchQuery(carouselData.secondTopBrand!.name);
+                    setIsSearching(true);
+                    setIsViewingAllCatalog(true);
+                  }}
+                />
+              )}
+            </div>
+          ) : (
             <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {dedupedProducts.map(product => {
-                const displayImage = product.image;
-                const displayPrice = product.sellingPrice;
-                const displayCapacity = product.capacity;
+            {dedupedProducts.length > 0 ? (
+              <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {dedupedProducts.map(product => {
+                  const displayImage = product.image;
+                  const displayPrice = product.sellingPrice;
+                  const displayCapacity = product.capacity;
 
-                return (
-                  <div key={product.id} className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden hover:shadow-[0_20px_40px_rgba(107,33,168,0.08)] hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+                  return (
+                    <div key={product.id} className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden hover:shadow-[0_20px_40px_rgba(107,33,168,0.08)] hover:-translate-y-1 transition-all duration-300 group flex flex-col">
                     {/* Image Container */}
                     <div className="h-64 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden flex items-center justify-center p-6">
                       {displayImage ? (
@@ -381,13 +494,15 @@ const Catalog = () => {
                 </button>
               </div>
             )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 bg-white rounded-3xl shadow-sm border border-gray-100">
+                <Filter className="w-12 h-12 text-gray-300 mb-3" />
+                <h2 className="text-lg font-bold text-gray-900 mb-1">No se encontraron productos</h2>
+                <p className="text-gray-500 text-sm">Prueba ajustando tu búsqueda o categoría.</p>
+              </div>
+            )}
             </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 bg-white rounded-3xl shadow-sm border border-gray-100">
-              <Filter className="w-12 h-12 text-gray-300 mb-3" />
-              <h2 className="text-lg font-bold text-gray-900 mb-1">No se encontraron productos</h2>
-              <p className="text-gray-500 text-sm">Prueba ajustando tu búsqueda o categoría.</p>
-            </div>
           )}
         </main>
       </div>
