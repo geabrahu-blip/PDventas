@@ -158,3 +158,6 @@ export interface RestockItem {
   createdAt: number;
   createdBy: string; // User name or ID who requested it
 }
+export interface CatalogConfig {
+  featuredBrands: string[];
+}

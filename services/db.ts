@@ -1114,6 +1114,20 @@ export const deleteRestockItem = async (id: string): Promise<void> => {
   await deleteDoc(doc(db, 'restock_list', id));
 };
 
+export const getCatalogConfig = async (): Promise<{ featuredBrands: string[] }> => {
+  const docRef = doc(db, 'settings', 'catalog_config');
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data() as { featuredBrands: string[] };
+  }
+  return { featuredBrands: [] };
+};
+
+export const updateCatalogConfig = async (featuredBrands: string[]): Promise<void> => {
+  const docRef = doc(db, 'settings', 'catalog_config');
+  await setDoc(docRef, { featuredBrands }, { merge: true });
+};
+
 export const getAllPublicInventoryItems = async () => {
   try {
     const publicCatalogRef = collection(db, 'public_catalog');

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Package, ShoppingBag, Filter, Search, MapPin, X, Plus, Minus, ArrowLeft } from 'lucide-react';
-import { getPublicInventoryItems, getAllPublicInventoryItems, PaginatedResult } from '../services/db';
+import { getPublicInventoryItems, getAllPublicInventoryItems, getCatalogConfig, PaginatedResult } from '../services/db';
 import { normalizeText } from '../utils/textUtils';
 import ProductCarousel from '../components/ProductCarousel';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
@@ -33,6 +33,7 @@ const Catalog = () => {
 
   // Pure State / Grid View
   const [isViewingAllCatalog, setIsViewingAllCatalog] = useState(false);
+  const [featuredBrands, setFeaturedBrands] = useState<string[]>([]);
   const isPureState = !searchQuery && activeTab === 'Todos' && !isViewingAllCatalog;
 
   // Cart state
@@ -41,6 +42,20 @@ const Catalog = () => {
 
   // Location Modal state
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const config = await getCatalogConfig();
+        if (config.featuredBrands) {
+          setFeaturedBrands(config.featuredBrands);
+        }
+      } catch (e) {
+        console.error("Could not fetch catalog config", e);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   const fetchCatalog = useCallback(async (reset: boolean = false) => {
     try {
@@ -151,7 +166,7 @@ const Catalog = () => {
 
   // Filter for carousels
   const carouselData = useMemo(() => {
-    if (!isPureState || allProducts.length === 0) return { newArrivals: [], popular: [], brands: [] };
+    if (!isPureState || allProducts.length === 0) return { newArrivals: [], popular: [], brandCarousels: [] };
 
     // Novedades: Sort by ID or creation logic (since no date, reverse array or sort by ID descending)
     const newArrivals = [...allProducts].reverse().slice(0, 10);
@@ -159,28 +174,18 @@ const Catalog = () => {
     // Más Populares: Random slice or just slice from middle
     const popular = [...allProducts].sort(() => 0.5 - Math.random()).slice(0, 10);
 
-    // Group by top brand
-    const brandCounts = allProducts.reduce((acc: any, p) => {
-      if (p.brand) {
-        acc[p.brand] = (acc[p.brand] || 0) + 1;
-      }
-      return acc;
-    }, {});
-
-    const sortedBrands = Object.entries(brandCounts).sort((a: any, b: any) => b[1] - a[1]);
-    const topBrand = sortedBrands.length > 0 ? sortedBrands[0][0] : null;
-    const topBrandProducts = topBrand ? allProducts.filter(p => p.brand === topBrand).slice(0, 10) : [];
-
-    const secondTopBrand = sortedBrands.length > 1 ? sortedBrands[1][0] : null;
-    const secondTopBrandProducts = secondTopBrand ? allProducts.filter(p => p.brand === secondTopBrand).slice(0, 10) : [];
+    // Generate carousels based on configured featuredBrands
+    const brandCarousels = featuredBrands.map(brandName => {
+       const products = allProducts.filter(p => p.brand?.toLowerCase() === brandName.toLowerCase()).slice(0, 10);
+       return { name: brandName, products };
+    }).filter(c => c.products.length > 0);
 
     return {
       newArrivals,
       popular,
-      topBrand: topBrand ? { name: topBrand, products: topBrandProducts } : null,
-      secondTopBrand: secondTopBrand ? { name: secondTopBrand, products: secondTopBrandProducts } : null
+      brandCarousels
     };
-  }, [isPureState, allProducts]);
+  }, [isPureState, allProducts, featuredBrands]);
 
   const handleReturnToHome = () => {
     setSearchQuery('');
@@ -356,30 +361,19 @@ const Catalog = () => {
                 onAddToCart={addToCart}
                 onViewAll={() => setIsViewingAllCatalog(true)}
               />
-              {carouselData.topBrand && (
+              {carouselData.brandCarousels.map((brandCarousel, idx) => (
                 <ProductCarousel
-                  title={`✨ Novedades en ${carouselData.topBrand.name}`}
-                  products={carouselData.topBrand.products}
+                  key={idx}
+                  title={`✨ Novedades en ${brandCarousel.name}`}
+                  products={brandCarousel.products}
                   onAddToCart={addToCart}
                   onViewAll={() => {
-                    setSearchQuery(carouselData.topBrand!.name);
+                    setSearchQuery(brandCarousel.name);
                     setIsSearching(true);
                     setIsViewingAllCatalog(true);
                   }}
                 />
-              )}
-              {carouselData.secondTopBrand && (
-                <ProductCarousel
-                  title={`✨ Novedades en ${carouselData.secondTopBrand.name}`}
-                  products={carouselData.secondTopBrand.products}
-                  onAddToCart={addToCart}
-                  onViewAll={() => {
-                    setSearchQuery(carouselData.secondTopBrand!.name);
-                    setIsSearching(true);
-                    setIsViewingAllCatalog(true);
-                  }}
-                />
-              )}
+              ))}
             </div>
           ) : (
             <>
