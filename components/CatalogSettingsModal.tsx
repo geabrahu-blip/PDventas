@@ -1,16 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Save, Plus, Trash2 } from 'lucide-react';
 import { getCatalogConfig, updateCatalogConfig } from '../services/db';
+import { useInventory } from '../context/InventoryContext';
 
 interface CatalogSettingsModalProps {
   onClose: () => void;
 }
 
 export const CatalogSettingsModal = ({ onClose }: CatalogSettingsModalProps) => {
+  const { inventory } = useInventory();
   const [brands, setBrands] = useState<string[]>([]);
   const [newBrand, setNewBrand] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const existingBrands = useMemo(() => {
+    const items = inventory || [];
+    const uniqueBrands = new Set(items.map(i => i.brand).filter(b => !!b) as string[]);
+    return Array.from(uniqueBrands).sort();
+  }, [inventory]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -75,13 +83,21 @@ export const CatalogSettingsModal = ({ onClose }: CatalogSettingsModalProps) => 
                 </p>
 
                 <form onSubmit={handleAddBrand} className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newBrand}
-                    onChange={(e) => setNewBrand(e.target.value)}
-                    placeholder="Nombre de la marca (Ej: Lattafa)"
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      list="config-brands-list"
+                      value={newBrand}
+                      onChange={(e) => setNewBrand(e.target.value)}
+                      placeholder="Selecciona o escribe una marca (Ej: Lattafa)"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                    <datalist id="config-brands-list">
+                      {existingBrands.map((b, idx) => (
+                        <option key={idx} value={b} />
+                      ))}
+                    </datalist>
+                  </div>
                   <button
                     type="submit"
                     disabled={!newBrand.trim()}
