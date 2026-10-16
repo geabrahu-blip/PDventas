@@ -336,29 +336,6 @@ const Catalog = () => {
             </div>
           )}
 
-          {/* Dónde Encontrarnos */}
-          <div className="mb-10 bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden flex flex-col md:flex-row">
-             <div className="md:w-1/3 h-48 md:h-auto bg-gray-200 relative">
-                <img src="/store.jpeg" alt="Nuestra Tienda" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent flex items-end p-4 md:hidden">
-                   <h2 className="text-white font-bold text-lg">Dónde Encontrarnos</h2>
-                </div>
-             </div>
-             <div className="p-6 md:p-8 flex-1 flex flex-col justify-center">
-                <h2 className="hidden md:block text-2xl font-bold text-gray-900 mb-2">Dónde Encontrarnos</h2>
-                <p className="text-gray-600 mb-4">Visita nuestra tienda física para descubrir estas y muchas más fragancias exclusivas.</p>
-                <a
-                  href={MAPS_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#D4AF37] font-semibold hover:text-[#AA8222] transition-colors"
-                >
-                  <MapPin className="h-5 w-5" />
-                  Ver ubicación en Google Maps
-                </a>
-             </div>
-          </div>
-
           {errorMsg && (
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6">
               {errorMsg}
