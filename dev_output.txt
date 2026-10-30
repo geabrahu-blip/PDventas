@@ -1,0 +1,23 @@
+
+> inventory-app@0.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 478 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+3:02:32 PM [vite] page reload screenshot_alerts.mjs
+3:02:32 PM [vite] page reload dev_output.txt
+3:02:44 PM [vite] page reload screenshot_alerts.mjs
+3:02:44 PM [vite] page reload dev_output.txt
+3:04:25 PM [vite] hmr update /pages/Alerts.tsx, /index.css
+3:04:25 PM [vite] page reload dev_output.txt
+3:05:33 PM [vite] page reload screenshot_alerts.mjs
+3:05:33 PM [vite] page reload dev_output.txt
+3:06:45 PM [vite] page reload verify.mjs
+3:06:45 PM [vite] page reload dev_output.txt
+3:07:52 PM [vite] page reload verify_pos.mjs
+3:07:52 PM [vite] page reload dev_output.txt
+3:09:11 PM [vite] page reload verify_sale.mjs
+3:09:11 PM [vite] page reload dev_output.txt

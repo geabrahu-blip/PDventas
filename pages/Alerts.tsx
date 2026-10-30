@@ -15,6 +15,11 @@ export default function Alerts() {
   const [loading, setLoading] = useState(true);
   const [outOfStock, setOutOfStock] = useState<InventoryItem[]>([]);
 
+  // Sugerencias
+  const [suggestionsDate, setSuggestionsDate] = useState(getYesterdayDateString());
+  const [salesSuggestions, setSalesSuggestions] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
   // Paginación
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);

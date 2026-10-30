@@ -8,17 +8,17 @@ import { chromium } from 'playwright';
   await page.setViewportSize({ width: 1280, height: 1024 });
 
   // Navigate to local preview server
-  await page.goto('http://localhost:4173/login');
+  await page.goto('http://localhost:5173/login');
   await page.waitForTimeout(1000);
 
   // Login as Vendor first to see if link is visible
-  await page.fill('input[type="text"]', 'admin');
-  await page.fill('input[type="password"]', 'admin123'); // guessing admin password to test locally
+  await page.fill('input[type="text"]', 'geabrahu@gmail.com');
+  await page.fill('input[type="password"]', 'RueshnafEop6'); // guessing admin password to test locally
   await page.click('button[type="submit"]');
 
   // Wait for login to complete and navigate to /alerts
   await page.waitForTimeout(3000);
-  await page.goto('http://localhost:4173/alerts');
+  await page.goto('http://localhost:5173/alerts');
   await page.waitForTimeout(2000);
 
   // Take screenshot of vendor view
