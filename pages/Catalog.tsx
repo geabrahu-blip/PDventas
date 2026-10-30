@@ -447,7 +447,10 @@ const Catalog = () => {
                 {dedupedProducts.map(product => {
                   const displayImage = product.image;
                   const displayPrice = product.sellingPrice;
+                  const originalPrice = product.originalPrice;
                   const displayCapacity = product.capacity;
+                  const hasDiscount = originalPrice && originalPrice > displayPrice;
+                  const discountPercent = hasDiscount ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100) : 0;
 
                   return (
                     <div key={product.id} className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden hover:shadow-[0_20px_40px_rgba(107,33,168,0.08)] hover:-translate-y-1 transition-all duration-300 group flex flex-col">
@@ -467,6 +470,12 @@ const Catalog = () => {
                         <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-primary-900 shadow-sm border border-gray-100">
                           {product.gender}
                         </span>
+                      )}
+                      {hasDiscount && (
+                        <div className="absolute top-3 right-3 bg-red-500 text-white font-bold rounded-full w-11 h-11 flex flex-col items-center justify-center text-[10px] shadow-lg transform rotate-12 z-10 leading-none">
+                          <span className="text-xs">{discountPercent}%</span>
+                          <span>OFF</span>
+                        </div>
                       )}
                     </div>
 
@@ -500,9 +509,16 @@ const Catalog = () => {
                       <div className="mt-auto pt-4 border-t border-gray-50 flex items-end justify-between">
                         <div>
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Precio</p>
-                          <p className="text-xl font-black text-gray-900">
-                            Bs. {(displayPrice || 0).toFixed(2)}
-                          </p>
+                          <div className="flex flex-col">
+                            {hasDiscount && (
+                              <p className="text-xs text-red-500 line-through font-semibold mb-0.5">
+                                Bs. {(originalPrice || 0).toFixed(2)}
+                              </p>
+                            )}
+                            <p className="text-xl font-black text-gray-900 leading-none">
+                              Bs. {(displayPrice || 0).toFixed(2)}
+                            </p>
+                          </div>
                         </div>
 
                         <button

@@ -63,7 +63,10 @@ export default function ProductCarousel({ title, products, onViewAll, onAddToCar
         {products.map(product => {
           const displayImage = product.image;
           const displayPrice = product.sellingPrice;
+          const originalPrice = product.originalPrice;
           const displayCapacity = product.capacity;
+          const hasDiscount = originalPrice && originalPrice > displayPrice;
+          const discountPercent = hasDiscount ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100) : 0;
 
           return (
             <div key={product.id} className="w-[42vw] sm:w-[220px] md:w-[28vw] flex-shrink-0 snap-start bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden hover:shadow-[0_10px_30px_rgba(20,184,166,0.1)] transition-all duration-300 group flex flex-col">
@@ -83,6 +86,12 @@ export default function ProductCarousel({ title, products, onViewAll, onAddToCar
                   <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full text-primary-900 shadow-sm border border-gray-100">
                     {product.gender}
                   </span>
+                )}
+                {hasDiscount && (
+                  <div className="absolute top-2 right-2 bg-red-500 text-white font-bold rounded-full w-9 h-9 sm:w-10 sm:h-10 flex flex-col items-center justify-center text-[8px] sm:text-[9px] shadow-lg transform rotate-12 z-10 leading-none">
+                    <span className="text-[10px] sm:text-xs">{discountPercent}%</span>
+                    <span>OFF</span>
+                  </div>
                 )}
               </div>
 
@@ -116,9 +125,16 @@ export default function ProductCarousel({ title, products, onViewAll, onAddToCar
                 <div className="mt-auto pt-3 border-t border-gray-50 flex items-end justify-between">
                   <div>
                     <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Precio</p>
-                    <p className="text-sm sm:text-base font-black text-gray-900">
-                      Bs. {(displayPrice || 0).toFixed(2)}
-                    </p>
+                    <div className="flex flex-col">
+                      {hasDiscount && (
+                        <p className="text-[10px] text-red-500 line-through font-semibold mb-0.5 leading-none">
+                          Bs. {(originalPrice || 0).toFixed(2)}
+                        </p>
+                      )}
+                      <p className="text-sm sm:text-base font-black text-gray-900 leading-none">
+                        Bs. {(displayPrice || 0).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
 
                   <button

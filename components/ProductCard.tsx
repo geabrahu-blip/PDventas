@@ -12,6 +12,7 @@ export const ProductCard = memo(({ product, cartQuantity, onAddToCart }: Product
   const availableStock = product.units - cartQuantity;
   const isOutOfStockForCart = availableStock <= 0;
   const isLowStock = product.units > 0 && product.units <= 2;
+  const hasDiscount = product.originalPrice && product.originalPrice > product.sellingPrice;
 
   return (
     <div
@@ -65,7 +66,16 @@ export const ProductCard = memo(({ product, cartQuantity, onAddToCart }: Product
         </div>
 
         <div className="mt-auto flex items-end justify-between">
-          <span className="text-base font-semibold text-slate-900">Bs. {product.sellingPrice}</span>
+          <div className="flex flex-col">
+            {hasDiscount && (
+              <span className="text-xs text-red-500 line-through font-semibold mb-0.5">
+                Bs. {product.originalPrice}
+              </span>
+            )}
+            <span className="text-base font-semibold text-slate-900 leading-none">
+              Bs. {product.sellingPrice}
+            </span>
+          </div>
         </div>
       </div>
     </div>
