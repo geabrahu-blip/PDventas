@@ -28,6 +28,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
   const [units, setUnits] = useState<number | ''>('');
   const [wholesalePrice, setWholesalePrice] = useState<number | ''>('');
   const [sellingPrice, setSellingPrice] = useState<number | ''>('');
+  const [originalPrice, setOriginalPrice] = useState<number | ''>('');
   const [capacity, setCapacity] = useState('');
   const [expirationDate, setExpirationDate] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -139,6 +140,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
       setUnits(editingProduct.units);
       setWholesalePrice(editingProduct.wholesalePrice);
       setSellingPrice(editingProduct.sellingPrice);
+      setOriginalPrice(editingProduct.originalPrice || '');
 
       setHasDecants((editingProduct as any).hasDecants || false);
       setDecants5ml((editingProduct as any).decants5ml ?? '');
@@ -168,6 +170,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
     setUnits('');
     setWholesalePrice('');
     setSellingPrice('');
+    setOriginalPrice('');
 
     setHasDecants(false);
     setDecants5ml('');
@@ -280,6 +283,7 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
         units: Number(units),
         wholesalePrice: Number(finalWholesalePrice),
         sellingPrice: Number(sellingPrice),
+        originalPrice: originalPrice === '' ? undefined : Number(originalPrice),
         totalPrice,
       };
 
@@ -626,6 +630,18 @@ export default function ProductForm({ onAdd, editingProduct, onCancelEdit }: Pro
               value={sellingPrice}
               onChange={(e) => setSellingPrice(Number(e.target.value))}
               className="w-full px-3 py-2 border border-teal-300 bg-teal-50 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label htmlFor="prod-price-original" className="block text-sm font-medium text-gray-700 mb-1">Precio de Antes (Opcional)</label>
+            <input
+              id="prod-price-original"
+              type="number"
+              step="0.01"
+              value={originalPrice}
+              onChange={(e) => setOriginalPrice(e.target.value === '' ? '' : Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
         </div>

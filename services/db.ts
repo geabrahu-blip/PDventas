@@ -618,6 +618,7 @@ export const syncToPublicCatalog = async (item: InventoryItem, isDelete: boolean
       categoryType: item.categoryType,
       image: item.image,
       sellingPrice: item.sellingPrice,
+      originalPrice: item.originalPrice,
     };
 
     // Safely strip any undefined properties to prevent Firebase "invalid-argument" crashes on older records

@@ -1,5 +1,0 @@
-<<<<<<< SEARCH
-  const hasDecants = product.decantsEnabled && product.decants;
-=======
-  const hasDecants = product.hasDecants;
->>>>>>> REPLACE

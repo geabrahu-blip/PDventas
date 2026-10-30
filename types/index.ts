@@ -17,6 +17,7 @@ export interface Product {
   totalPrice: number; // calculated
   wholesalePrice: number;
   sellingPrice: number;
+  originalPrice?: number;
   name: string;
 
   // New optional fields for compatibility
@@ -58,6 +59,7 @@ export interface InventoryItem {
   priceBs: number;
   wholesalePrice: number;
   sellingPrice: number;
+  originalPrice?: number;
 
   // Decants
   hasDecants?: boolean;
@@ -84,6 +86,7 @@ export interface PublicCatalogItem {
   expirationDate?: string;
   image: string;
   sellingPrice: number;
+  originalPrice?: number;
   // NO priceBs or wholesalePrice
 
 }
