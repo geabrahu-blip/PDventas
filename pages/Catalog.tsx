@@ -365,27 +365,6 @@ const Catalog = () => {
             </div>
           </div>
 
-          {/* Tabs */}
-          {!isSearching && (
-            <div className="flex gap-2 overflow-x-auto mt-4 pb-2 md:pb-0 scrollbar-hide">
-              {TABS.map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab);
-                    setIsViewingAllCatalog(true);
-                  }}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
-                    activeTab === tab
-                      ? 'bg-white text-primary-600 shadow-[0_4px_10px_rgba(255,255,255,0.3)] transform scale-105'
-                      : 'bg-primary-500 text-primary-50 hover:bg-primary-400 hover:text-white backdrop-blur-sm border border-primary-400/50'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </header>
 
