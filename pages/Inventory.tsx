@@ -594,10 +594,17 @@ const Inventory = () => {
                   Cantidad a Ajustar (+ o -)
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   required
                   value={adjustQuantity}
-                  onChange={(e) => setAdjustQuantity(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '' || val === '-') {
+                      setAdjustQuantity(val as any);
+                    } else if (!isNaN(Number(val))) {
+                      setAdjustQuantity(Number(val));
+                    }
+                  }}
                   placeholder="Ej: 5 para Entrada, -2 para Salida"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
