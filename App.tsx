@@ -17,6 +17,7 @@ function App() {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Navigate to="/catalogo" replace />} />
             <Route path="/login" element={<Login />} />
           <Route path="/catalogo" element={<Catalog />} />
           <Route element={<Layout />}>
@@ -26,9 +27,8 @@ function App() {
             <Route path="/reports" element={<SalesReport />} />
             <Route path="/users" element={<Users />} />
             <Route path="/alerts" element={<Alerts />} />
-              <Route path="/" element={<Navigate to="/inventory" replace />} />
-              <Route path="*" element={<Navigate to="/inventory" replace />} />
             </Route>
+            <Route path="*" element={<Navigate to="/catalogo" replace />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>
